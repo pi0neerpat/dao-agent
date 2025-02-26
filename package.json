@@ -1,0 +1,25 @@
+{
+  "name": "dao-agent",
+  "productName": "dao-agent",
+  "version": "1.0.0",
+  "description": "DAO participation at the speed of AI",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "echo \"Not configured\"",
+    "lint": "echo \"No linting configured\""
+  },
+  "keywords": [],
+  "author": "pi0neerpat",
+  "license": "MIT",
+  "dependencies": {
+    "@orama/orama": "^2.0.7",
+    "@xenova/transformers": "^2.6.2",
+    "langchain": "^0.0.170",
+    "mammoth": "^1.6.0",
+    "odt2html": "^1.0.1",
+    "ollama": "^0.4.6",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {},
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+}
