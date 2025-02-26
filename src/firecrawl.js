@@ -14,18 +14,19 @@ class FirecrawlService {
         try {
             if (this.useMocks) {
                 // Return mock data based on URL pattern
-                if (url.includes('/delegate/')) {
-                    return mockResponses.delegate.data;
+                if (url.includes('/profile/')) {
+                    return mockResponses.delegate;
                 } else if (url.includes('/proposals')) {
-                    return mockResponses.dao.data;
+                    return mockResponses.dao;
                 } else if (url.includes('/proposal/')) {
-                    return mockResponses.proposal.data;
+                    return mockResponses.proposal;
                 }
                 throw new Error('No mock data available for this URL');
             }
 
             const response = await this.app.scrapeUrl(url, {
                 formats: ['markdown'],
+                // waitFor: 5000,
                 ...options
             });
 
@@ -42,7 +43,8 @@ class FirecrawlService {
 
     async scrapeDelegate(walletAddress, daoName) {
         return this.scrapeUrl(
-            `https://www.tally.xyz/gov/${daoName}/delegate/${walletAddress}`
+            `https://www.tally.xyz/profile/${walletAddress}`
+
         );
     }
 

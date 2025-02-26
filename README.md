@@ -122,14 +122,115 @@ Use AI to summarize several aspects for the proposal
 
 ### Phase 2: Data Processing
 
-1. **Data Processing Scripts**:
+1. **Create Data Models**:
 
-   - Implement Node.js scripts to process the scraped data.
-   - Generate summaries for logistics, actions, impact, and context.
+   - Define structured models for the scraped data:
+     - DelegateModel (voting power, delegations, voting history)
+     - DAOModel (name, proposals list, governance parameters)
+     - ProposalModel (title, dates, votes, status, actions)
+   - Implement data validation and transformation utilities
 
-2. **AI Integration**:
-   - Integrate AI algorithms to generate concise summaries of proposals.
-   - Test the AI-generated summaries for accuracy and relevance.
+2. **Implement Data Processors**:
+
+   - Create separate processors for each data type:
+     ```
+     /src/processors/
+     ├── delegate.js    # Process delegate data
+     ├── dao.js         # Process DAO data
+     ├── proposal.js    # Process proposal data
+     └── index.js       # Export all processors
+     ```
+   - Each processor should:
+     - Parse markdown/JSON responses
+     - Extract relevant information
+     - Transform data into structured models
+     - Store processed data for AI analysis
+
+3. **AI Processing Pipeline**:
+
+   - Set up OpenAI/LangChain integration
+   - Create prompts for different analysis types:
+     - Logistics analysis (dates, deadlines, requirements)
+     - Action analysis (what the proposal will do)
+     - Impact analysis (treasury, protocol changes)
+     - Context analysis (background, discussions, related proposals)
+   - Implement summary generation with specific focus areas
+
+4. **Data Aggregation**:
+
+   - Combine processed data from different sources
+   - Create relationships between entities:
+     - Delegate → DAOs they participate in
+     - DAOs → Their proposals
+     - Proposals → Voting history and delegate participation
+   - Generate comprehensive reports
+
+5. **Storage and Retrieval**:
+
+   - Implement caching strategy for processed data
+   - Store AI-generated summaries
+   - Create query interface for accessing processed data
+
+6. **Testing and Validation**:
+
+   - Unit tests for data processors
+   - Integration tests for AI pipeline
+   - Validation of summary accuracy
+   - Performance testing for data processing
+
+7. **Monitoring and Logging**:
+   - Track processing success/failure rates
+   - Monitor AI response quality
+   - Log processing times and resource usage
+   - Alert on processing errors
+
+### Expected Outputs
+
+1. **Delegate Analysis**:
+
+   ```json
+   {
+     "address": "0xb1a32FC9F9D8b2cf86C068Cae13108809547ef71",
+     "summary": {
+       "votingPower": "542 votes (381.69% of Quorum)",
+       "participation": "Inactive delegate",
+       "votingPattern": "No recent votes",
+       "influence": "High voting power but low participation"
+     }
+   }
+   ```
+
+2. **Proposal Summary**:
+
+   ```json
+   {
+     "id": "756",
+     "title": "#🎨 Noundry: Add Dynamic Accessory",
+     "analysis": {
+       "logistics": {
+         "submission": "Feb 22nd, 2025",
+         "votingPeriod": "Feb 25 - Mar 1, 2025",
+         "executionTime": "Earliest possible: Mar 2, 2025"
+       },
+       "actions": "Adding dynamic accessory trait with placeholder for future updates",
+       "impact": "Enables first dynamic Nouns NFT with evolving artwork",
+       "context": "Part of ongoing Nounish art development initiatives"
+     }
+   }
+   ```
+
+3. **DAO Overview**:
+   ```json
+   {
+     "name": "NounsDAO",
+     "metrics": {
+       "activeProposals": 4,
+       "recentActivity": "High",
+       "treasuryImpact": "Medium",
+       "communityEngagement": "Strong"
+     }
+   }
+   ```
 
 ### Phase 3: User Interface (Future Phase)
 
