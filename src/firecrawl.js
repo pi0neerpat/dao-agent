@@ -59,6 +59,24 @@ class FirecrawlService {
             `https://www.tally.xyz/gov/${daoName}/proposal/${proposalId}`
         );
     }
+
+    async scrapeDAOProposals(daoSlug) {
+        return this.scrapeUrl(
+            `https://www.tally.xyz/gov/${daoSlug}/proposals`
+        );
+    }
+
+    async scrapeAllDAOProposals(daoList) {
+        const results = await Promise.allSettled(
+            daoList.map(dao => this.scrapeDAOProposals(dao.slug))
+        );
+
+        return results.map((result, index) => ({
+            dao: daoList[index],
+            data: result.status === 'fulfilled' ? result.value : null,
+            error: result.status === 'rejected' ? result.reason : null
+        }));
+    }
 }
 
 export default FirecrawlService;

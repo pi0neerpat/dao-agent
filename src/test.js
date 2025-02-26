@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 import FirecrawlService from './firecrawl.js';
-import { parseDelegateMemberships } from './parser.js';
+import { parseDelegateMemberships, parseActiveProposals } from './parser.js';
 
 config();
 
@@ -15,18 +15,25 @@ async function test() {
         console.log('\n🔍 Testing delegate scraping...');
         const delegateData = await firecrawl.scrapeDelegate(DELEGATE_ADDRESS, DAO_NAME);
         const daoMemberships = parseDelegateMemberships(delegateData);
-        console.log('Delegate Data:', delegateData);
-        console.log('DAO Memberships:', daoMemberships);
+        // console.log('DAO Memberships:', daoMemberships);
 
-        // // Test DAO scraping
-        // console.log('\n🔍 Testing DAO scraping...');
-        // const daoData = await firecrawl.scrapeDAO(DAO_NAME);
-        // console.log('DAO Data:', daoData);
+        // Fetch active proposals for each DAO
+        console.log('\n📊 Fetching active proposals for all DAOs...');
+        const proposalResults = await firecrawl.scrapeAllDAOProposals(daoMemberships);
 
-        // // // Test proposal scraping
-        // console.log('\n🔍 Testing proposal scraping...');
-        // const proposalData = await firecrawl.scrapeProposal(DAO_NAME, PROPOSAL_ID);
-        // console.log('Proposal Data:', proposalData);
+        // Process and display results
+        const result = proposalResults[0];
+        // for (const result of proposalResults) {
+        if (result.error) {
+            console.error(`Failed to fetch proposals for ${result.dao.name}:`, result.error);
+            // continue;
+        }
+
+        const activeProposals = parseActiveProposals(result.data);
+        if (activeProposals.length > 0) {
+            console.log(`\n${result.dao.name} active proposals:`, activeProposals);
+        }
+        // }
     } catch (error) {
         console.error('Test failed:', error);
     }

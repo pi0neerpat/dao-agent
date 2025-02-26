@@ -9,7 +9,7 @@ export function parseDelegateMemberships(delegateData) {
     }
 
     const markdown = delegateData.markdown;
-    
+
     // Find the DAO Memberships section and its table
     const daoSection = markdown.split('###### DAO Memberships')[1];
     if (!daoSection) return [];
@@ -21,7 +21,7 @@ export function parseDelegateMemberships(delegateData) {
 
     while ((match = tableRegex.exec(daoSection)) !== null) {
         const [_, imageUrl, name, slug, votes, percentOfDelegated, delegators] = match;
-        
+
         // Skip if it's the header row
         if (name === 'DAO') continue;
 
@@ -36,4 +36,34 @@ export function parseDelegateMemberships(delegateData) {
     }
 
     return daos;
+}
+
+/**
+ * Extracts active proposals from DAO data
+ * @param {Object} daoData - Raw DAO data from Firecrawl
+ * @returns {Array<Object>} List of active proposals
+ */
+export function parseActiveProposals(daoData) {
+    if (!daoData?.markdown) {
+        return [];
+    }
+
+    const proposals = [];
+    // Updated regex to match the actual table format in the DAO data
+    const proposalRegex = /\| \[([^\]]+)\]\(([^)]+)\)<br>Active<br>([^|]+?) \| ([^|]+) \| ([^|]+) \|/g;
+    let match;
+
+    while ((match = proposalRegex.exec(daoData.markdown)) !== null) {
+        const [_, title, url, date, votesFor, votesAgainst] = match;
+        proposals.push({
+            title: title.trim(),
+            url: url.trim(),
+            date: date.trim(),
+            votesFor: votesFor.trim(),
+            votesAgainst: votesAgainst.trim(),
+            status: 'Active'
+        });
+    }
+
+    return proposals;
 }
