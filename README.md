@@ -75,14 +75,7 @@ Use AI to summarize several aspects for the proposal
 #### DAO Data (example_dao.json)
 
 - **DAO Name**: `NounsDAO`
-- **Proposals**: List of proposals with details such as:
-  - **Proposal Title**: `#🎨 Noundry: Add Dynamic Accessory`
-  - **Proposal Status**: `Active`
-  - **Proposal Date**: `Feb 22nd, 2025`
-  - **Votes For**: `8`
-  - **Votes Against**: `1`
-  - **Total Votes**: `9`
-  - **Addresses Voted**: `6`
+- **Image**: ![DAO Image](https://static.tally.xyz/1decbb17-b472-4eb9-9141-92c3f86770de_400x400.jpg)
 
 #### Proposal Data (example_proposal.md)
 
@@ -104,19 +97,23 @@ Use AI to summarize several aspects for the proposal
 ### Phase 1: Scraping
 
 1. **Setup Project**:
-   - Initialize a new project repository.
+
+   - Initialize a new Node.js project.
    - Install necessary dependencies (e.g., Firecrawl.dev, database libraries).
 
 2. **Firecrawl.dev Configuration**:
+
    - Configure Firecrawl.dev to access Tally.xyz.
-   - Write scripts to navigate to delegate pages and scrape DAO memberships.
+   - Write Node.js scripts to navigate to delegate pages and scrape DAO memberships.
 
 3. **Database Setup**:
+
    - Design the database schema to store user, DAO, and proposal data.
-   - Implement database connection and CRUD operations.
+   - Implement database connection and CRUD operations using Node.js.
 
 4. **Scraping Scripts**:
-   - Implement scripts to scrape delegate data, DAO memberships, and proposals.
+
+   - Implement Node.js scripts to scrape delegate data, DAO memberships, and proposals.
    - Store the scraped data in the database.
 
 5. **Testing**:
@@ -126,16 +123,18 @@ Use AI to summarize several aspects for the proposal
 ### Phase 2: Data Processing
 
 1. **Data Processing Scripts**:
-   - Implement scripts to process the scraped data.
+
+   - Implement Node.js scripts to process the scraped data.
    - Generate summaries for logistics, actions, impact, and context.
 
 2. **AI Integration**:
    - Integrate AI algorithms to generate concise summaries of proposals.
    - Test the AI-generated summaries for accuracy and relevance.
 
-### Phase 3: User Interface
+### Phase 3: User Interface (Future Phase)
 
 1. **Frontend Development**:
+
    - Design and implement a user-friendly interface to display the proposal summaries.
    - Allow users to input their wallet address and view their delegate data and proposal summaries.
 
@@ -143,9 +142,10 @@ Use AI to summarize several aspects for the proposal
    - Develop backend APIs to serve the processed data to the frontend.
    - Ensure secure and efficient data retrieval.
 
-### Phase 4: Deployment
+### Phase 4: Deployment (Future Phase)
 
 1. **Deployment Setup**:
+
    - Set up deployment pipelines for both frontend and backend.
    - Deploy the application to a cloud provider.
 
