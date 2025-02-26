@@ -77,6 +77,30 @@ class FirecrawlService {
             error: result.status === 'rejected' ? result.reason : null
         }));
     }
+
+    async scrapeProposalDetails(daoSlug, proposalId) {
+        return this.scrapeUrl(
+            `https://www.tally.xyz/gov/${daoSlug}/proposal/${proposalId}`
+        );
+    }
+
+    async scrapeAllProposalDetails(proposals, daoSlug) {
+        const proposalIds = proposals.map(p => {
+            const match = p.url.match(/\/proposal\/(\d+)$/);
+            return match ? match[1] : null;
+        }).filter(Boolean);
+
+        const results = await Promise.allSettled(
+            proposalIds.map(id => this.scrapeProposalDetails(daoSlug, id))
+        );
+
+        return results.map((result, index) => ({
+            proposalId: proposalIds[index],
+            basicInfo: proposals[index],
+            details: result.status === 'fulfilled' ? result.value : null,
+            error: result.status === 'rejected' ? result.reason : null
+        }));
+    }
 }
 
 export default FirecrawlService;

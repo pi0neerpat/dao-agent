@@ -1,39 +1,66 @@
 import { config } from 'dotenv';
 import FirecrawlService from './firecrawl.js';
-import { parseDelegateMemberships, parseActiveProposals } from './parser.js';
+import { parseDelegateMemberships, parseActiveProposals, createUnifiedDelegateProfile } from './parser.js';
+import { writeFileSync } from 'fs';
 
 config();
 
 const DELEGATE_ADDRESS = '0x9492510bbcb93b6992d8b7bb67888558e12dcac4';
 const DAO_NAME = 'nounsdao';
-const PROPOSAL_ID = '756';
 
 async function test() {
     const firecrawl = new FirecrawlService(process.env.FIRECRAWL_API_KEY);
     try {
-        // Test delegate scraping
-        console.log('\n🔍 Testing delegate scraping...');
+        // Get delegate data
+        console.log('\n🔍 Fetching delegate data...');
         const delegateData = await firecrawl.scrapeDelegate(DELEGATE_ADDRESS, DAO_NAME);
         const daoMemberships = parseDelegateMemberships(delegateData);
-        // console.log('DAO Memberships:', daoMemberships);
 
-        // Fetch active proposals for each DAO
-        console.log('\n📊 Fetching active proposals for all DAOs...');
+        // Fetch all proposals
+        console.log('\n📊 Fetching proposals for all DAOs...');
         const proposalResults = await firecrawl.scrapeAllDAOProposals(daoMemberships);
 
-        // Process and display results
-        const result = proposalResults[0];
-        // for (const result of proposalResults) {
-        if (result.error) {
-            console.error(`Failed to fetch proposals for ${result.dao.name}:`, result.error);
-            // continue;
+        // Fetch proposal details
+        console.log('\n📝 Fetching proposal details...');
+        const proposalDetails = {};
+        for (const result of proposalResults) {
+            if (!result.error && result.data) {
+                const proposals = parseActiveProposals(result.data);
+                const details = await firecrawl.scrapeAllProposalDetails(proposals, result.dao.slug);
+
+                details.forEach(detail => {
+                    if (detail.details) {
+                        proposalDetails[`${result.dao.slug}-${detail.proposalId}`] = detail.details;
+                    }
+                });
+            }
         }
 
-        const activeProposals = parseActiveProposals(result.data);
-        if (activeProposals.length > 0) {
-            console.log(`\n${result.dao.name} active proposals:`, activeProposals);
-        }
-        // }
+        // Create unified profile
+        const profile = createUnifiedDelegateProfile(delegateData, proposalResults, proposalDetails);
+        // Display results
+        console.log('\n📊 Delegate Profile Summary:');
+        console.log(`Name: ${profile.name}`);
+        console.log(`Address: ${profile.address}`);
+        console.log(`Total DAOs: ${profile.stats.totalDaos}`);
+        console.log(`Total Proposals: ${profile.stats.totalProposals}`);
+        console.log(`Active Proposals: ${profile.stats.activeProposals}`);
+
+        profile.daos.forEach(dao => {
+            console.log(`\n🏛️  ${dao.name}:`);
+            console.log(`Active Proposals: ${dao.stats.activeProposals}`);
+            dao.proposals.forEach(prop => {
+                console.log(`  - ${prop.title} (${prop.status})`);
+                if (prop.details?.forumLinks.length > 0) {
+                    console.log(`    Forum: ${prop.details.forumLinks[0]}`);
+                }
+            });
+        });
+
+        console.log(JSON.stringify(profile))
+        // Debug: save to a file
+        writeFileSync('profile.json', JSON.stringify(profile, null, 2));
+
     } catch (error) {
         console.error('Test failed:', error);
     }

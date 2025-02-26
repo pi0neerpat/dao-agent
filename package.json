@@ -9,7 +9,7 @@
     "start": "node src/index.js",
     "test": "node src/test.js",
     "dev": "node --watch src/index.js",
-    "watch": "nodemon exec src/test.js"
+    "watch": "nodemon exec src/test.js --watch src"
   },
   "keywords": [],
   "author": "pi0neerpat",
