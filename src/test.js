@@ -12,35 +12,19 @@ async function test() {
 
     try {
         // Test delegate scraping
-        console.log('\n🔍 Fetching delegate data...');
-        const delegateData = await firecrawl.scrapeDelegate(DELEGATE_ADDRESS);
-        console.log('Delegate Data:', {
-            address: DELEGATE_ADDRESS,
-            votingPower: '542',
-            receivedDelegations: '8',
-            proposalsCreated: '0'
-        });
+        console.log('\n🔍 Testing delegate scraping...');
+        const delegateData = await firecrawl.scrapeDelegate(DELEGATE_ADDRESS, DAO_NAME);
+        // console.log('Delegate Data:', delegateData);
 
-        // Test DAO scraping
-        console.log('\n🔍 Fetching DAO data...');
-        const daoData = await firecrawl.scrapeDAO(DAO_NAME);
-        console.log('DAO Data:', {
-            name: 'NounsDAO',
-            totalProposals: '756',
-            activeProposals: '4'
-        });
+        // // Test DAO scraping
+        // console.log('\n🔍 Testing DAO scraping...');
+        // const daoData = await firecrawl.scrapeDAO(DAO_NAME);
+        // console.log('DAO Data:', daoData);
 
-        // Test proposal scraping
-        console.log('\n🔍 Fetching proposal data...');
-        const proposalData = await firecrawl.scrapeProposal(DAO_NAME, PROPOSAL_ID);
-        console.log('Proposal Data:', {
-            id: PROPOSAL_ID,
-            title: '#🎨 Noundry: Add Dynamic Accessory',
-            status: 'Active',
-            votesFor: '8',
-            votesAgainst: '1',
-            abstain: '0'
-        });
+        // // Test proposal scraping
+        // console.log('\n🔍 Testing proposal scraping...');
+        // const proposalData = await firecrawl.scrapeProposal(DAO_NAME, PROPOSAL_ID);
+        // console.log('Proposal Data:', proposalData);
     } catch (error) {
         console.error('Test failed:', error);
     }

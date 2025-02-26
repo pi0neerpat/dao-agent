@@ -1,68 +1,61 @@
 import FirecrawlApp from '@mendable/firecrawl-js';
+import mockResponses from './mocks/responses.js';
 
 class FirecrawlService {
-    constructor(apiKey) {
-        this.app = new FirecrawlApp({ apiKey });
+    constructor(apiKey, options = {}) {
+        this.useMocks = options.useMocks || process.env.MOCK_FIRECRAWL_DATA === 'true';
+        if (!this.useMocks) {
+            this.app = new FirecrawlApp({ apiKey });
+        }
+        console.log(`FirecrawlService initialized with ${this.useMocks ? 'mock' : 'live'} data`);
     }
 
-    async scrapeDelegate(walletAddress) {
+    async scrapeUrl(url, options = {}) {
         try {
-            const response = await this.app.scrapeUrl(
-                `https://www.tally.xyz/gov/nounsdao/delegate/${walletAddress}`,
-                {
-                    formats: ['markdown'],
+            if (this.useMocks) {
+                // Return mock data based on URL pattern
+                if (url.includes('/delegate/')) {
+                    return mockResponses.delegate.data;
+                } else if (url.includes('/proposals')) {
+                    return mockResponses.dao.data;
+                } else if (url.includes('/proposal/')) {
+                    return mockResponses.proposal.data;
                 }
-            );
-
-            if (!response.success) {
-                throw new Error(`Failed to scrape delegate: ${response.error}`);
+                throw new Error('No mock data available for this URL');
             }
 
-            return response.data;
+            const response = await this.app.scrapeUrl(url, {
+                formats: ['markdown'],
+                ...options
+            });
+
+            if (!response.success) {
+                throw new Error(`Failed to scrape URL: ${response.error}`);
+            }
+            console.log(JSON.stringify(response))
+            return response;
         } catch (error) {
-            console.error('Error scraping delegate:', error);
+            console.error('Scraping error:', error);
             throw error;
         }
+    }
+
+    async scrapeDelegate(walletAddress, daoName) {
+        return this.scrapeUrl(
+            `https://www.tally.xyz/gov/${daoName}/delegate/${walletAddress}`
+        );
     }
 
     async scrapeDAO(daoName) {
-        try {
-            const response = await this.app.scrapeUrl(
-                `https://www.tally.xyz/gov/${daoName}/proposals`,
-                {
-                    formats: ['markdown'],
-                }
-            );
-
-            if (!response.success) {
-                throw new Error(`Failed to scrape DAO: ${response.error}`);
-            }
-
-            return response.data;
-        } catch (error) {
-            console.error('Error scraping DAO:', error);
-            throw error;
-        }
+        return this.scrapeUrl(
+            `https://www.tally.xyz/gov/${daoName}/proposals`
+        );
     }
 
     async scrapeProposal(daoName, proposalId) {
-        try {
-            const response = await this.app.scrapeUrl(
-                `https://www.tally.xyz/gov/${daoName}/proposal/${proposalId}`,
-                {
-                    formats: ['markdown'],
-                }
-            );
-
-            if (!response.success) {
-                throw new Error(`Failed to scrape proposal: ${response.error}`);
-            }
-
-            return response.data;
-        } catch (error) {
-            console.error('Error scraping proposal:', error);
-            throw error;
-        }
+        return this.scrapeUrl(
+            `https://www.tally.xyz/gov/${daoName}/proposal/${proposalId}`
+        );
     }
 }
 
