@@ -1,4 +1,6 @@
 import { config } from 'dotenv';
+config();
+
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import FirecrawlService from './firecrawl.js';
@@ -10,8 +12,6 @@ import {
 import { askAboutProposal, saveAnalysisToFile, summarizeProposal } from './service/proposalAnalyzer.js';
 import { serve } from './service/ollama/ollama.js';
 import { getFormattedTimestamp } from './utils.js';
-
-config();
 
 const DELEGATE_ADDRESS = '0x1111fd96fD579642c0D589cd477188e29b47b738';
 
@@ -32,15 +32,19 @@ async function test() {
         console.log('📊 Fetching delegate data and proposals...');
         const delegateData = await firecrawl.scrapeDelegate(DELEGATE_ADDRESS, DAO_NAME);
         const daoMemberships = parseDelegateMemberships(delegateData);
-        const proposalResults = await firecrawl.scrapeAllDAOProposals(daoMemberships);
 
-        // Fetch proposal details
+        // Limit to first DAO only
+        const limitedDaoMemberships = daoMemberships.slice(0, 1);
+        const proposalResults = await firecrawl.scrapeAllDAOProposals(limitedDaoMemberships);
+
+        // Fetch proposal details - limited to first 3 proposals
         console.log('📝 Fetching proposal details...');
         const proposalDetails = {};
         for (const result of proposalResults) {
             if (!result.error && result.data) {
-                const proposals = parseActiveProposals(result.data);
-                const details = await firecrawl.scrapeAllProposalDetails(proposals, result.dao.slug);
+                const allProposals = parseActiveProposals(result.data);
+                const limitedProposals = allProposals.slice(0, 3); // Only first 3 proposals
+                const details = await firecrawl.scrapeAllProposalDetails(limitedProposals, result.dao.slug);
 
                 details.forEach(detail => {
                     if (detail.details) {
@@ -53,7 +57,8 @@ async function test() {
         // Create unified delegate profile
         console.log('🔄 Creating unified delegate profile...');
         const profile = createUnifiedDelegateProfile(delegateData, proposalResults, proposalDetails);
-        // Save unified profile
+
+        // Save profile as before
         const profileTimestamp = getFormattedTimestamp();
         const profileDir = join(process.cwd(), 'profiles');
         const profileFilename = `profile-${profileTimestamp}.json`;
@@ -61,7 +66,7 @@ async function test() {
 
         mkdirSync(profileDir, { recursive: true });
         writeFileSync(profilePath, JSON.stringify(profile, null, 2));
-        console.log(`\n📝 Profile saved to: ${profilePath}`);
+        console.log(`📝 Profile saved to: ${profilePath}`);
 
         const analysisResults = {
             name: profile.name,
@@ -69,16 +74,20 @@ async function test() {
             daos: []
         };
 
-        // Analyze active proposals using the unified profile
-        console.log('\n🤔 Analyzing proposals...');
-        for (const dao of profile.daos) {
-            const activeProposals = dao.proposals.filter(p => p.status === 'Active');
+        // Analyze only first 3 proposals of the first DAO
+        console.log('🤔 Analyzing proposals...');
+        const firstDao = profile.daos[0];
+        if (firstDao) {
+            const activeProposals = firstDao.proposals
+                .filter(p => p.status === 'Active')
+                .slice(0, 1); // Limit to first 1 active proposals
+
             if (activeProposals.length > 0) {
-                console.log(`\nAnalyzing ${activeProposals.length} active proposals in ${dao.name}:`);
+                console.log(`Analyzing ${activeProposals.length} active proposals in ${firstDao.name}:`);
 
                 const analyzedProposals = [];
                 for (const proposal of activeProposals) {
-                    console.log(`\nProposal: ${proposal.title}`);
+                    console.log(`Proposal: ${proposal.title}`);
 
                     // Get AI summary
                     console.log('Generating summary...');
@@ -107,13 +116,13 @@ async function test() {
                 }
 
                 analysisResults.daos.push({
-                    name: dao.name,
+                    name: firstDao.name,
                     proposals: analyzedProposals
                 });
             }
         }
-        await saveAnalysisToFile(analysisResults);
 
+        await saveAnalysisToFile(analysisResults);
 
     } catch (error) {
         console.error('Test failed:', error);

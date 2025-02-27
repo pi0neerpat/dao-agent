@@ -1,7 +1,12 @@
+import { config } from 'dotenv';
+config();
+
 import { chat } from './ollama/ollama.js';
 import { getFormattedTimestamp } from '../utils.js';
+import { join } from 'path';
+import { writeFileSync, mkdirSync } from 'fs';
 
-const MODEL = process.env.OLLAMA_MODEL || 'mistral';
+const MODEL = process.env.OLLAMA_MODEL
 
 const formattedProposalDetails = (proposal) => {
     // Extract key sections from description if they exist
@@ -39,6 +44,7 @@ ${proposal.comments.join('\n')}`
  * Analyzes a proposal using Ollama
  */
 export async function summarizeProposal(proposal) {
+    console.log(`Using model: ${MODEL}`);
     const prompt = `
 Analyze this DAO proposal and provide a concise summary. Pay special attention to:
 1. The main objective
@@ -46,13 +52,14 @@ Analyze this DAO proposal and provide a concise summary. Pay special attention t
 3. Voting status and timeline
 4. Key concerns or benefits
 
+The summary should only be 3 sentences long.
+
 Proposal details:
 <document>
 ${formattedProposalDetails(proposal)}
 </document>
 `;
 
-    console.log('Prompt:', prompt);
     let response = '';
     try {
         await chat(MODEL, prompt, (json) => {
