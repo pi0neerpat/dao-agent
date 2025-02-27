@@ -90,47 +90,58 @@ export function parseProposalDetails(proposalData) {
         forumLinks.push(forumMatch[1]);
     }
 
-    // Extract proposal description
-    const descriptionMatch = markdown.match(/#{2,3} Description\s+([\s\S]+?)(?=#{2,3}|$)/i);
-    const description = descriptionMatch ? descriptionMatch[1].trim() : '';
+    // Extract voting stats with better parsing
+    const votingInfo = markdown.match(/Quorum\s*(\d+)\s*of\s*(\d+)/);
+    const votingStats = {
+        quorumReached: votingInfo ? parseInt(votingInfo[1]) >= parseInt(votingInfo[2]) : false,
+        quorumCurrent: votingInfo ? parseInt(votingInfo[1]) : 0,
+        quorumRequired: votingInfo ? parseInt(votingInfo[2]) : 0
+    };
 
+    // Extract all sections with improved section detection
+    const sectionRegex = /#{2,3}\s+([^#\n]+)\n+([\s\S]+?)(?=#{2,3}|$)/g;
+    let sectionMatch;
+    const sections = {};
+    while ((sectionMatch = sectionRegex.exec(markdown)) !== null) {
+        const [_, title, content] = sectionMatch;
+        sections[title.trim()] = content.trim();
+    }
+
+    // Build flattened proposal details
     return {
+        proposedBy: markdown.match(/by\s*\[(.*?)\]/)?.[1] || '',
+        proposedDate: markdown.match(/Proposed on: ([^<\n]+)/)?.[1] || '',
         forumLinks,
-        description,
-        fullMarkdown: markdown
+        votingStats,
+        summary: sections['Summary'] || sections['Description'] || '',
+        description: sections['Description'] || '',
+        rationale: sections['Rationale'] || sections['Motivation'] || '',
+        specification: sections['Specification'] || sections['Implementation'] || '',
+        impact: sections['Impact'] || sections['Impact Overview'] || '',
+        // Include all other sections as-is
+        ...sections
     };
 }
 
 /**
  * Creates a unified delegate profile with DAOs and their proposals
- * @param {Object} delegateData - Raw delegate data
- * @param {Array} daoProposalResults - Results from scraping DAO proposals
- * @param {Object} proposalDetails - Detailed proposal data
- * @returns {Object} Unified delegate profile
  */
 export function createUnifiedDelegateProfile(delegateData, daoProposalResults, proposalDetails = {}) {
-    // Get basic DAO memberships
     const daos = parseDelegateMemberships(delegateData);
 
-    // Create enhanced DAO objects with proposals
     const enhancedDaos = daos.map(dao => {
-        // Find proposal results for this DAO
-        const daoResult = daoProposalResults.find(result => result.dao.slug === dao.slug);
+        const daoResult = daoProposalResults.find(r => r.dao.slug === dao.slug);
         const proposals = daoResult?.data ? parseActiveProposals(daoResult.data) : [];
 
-        // Enhance proposals with their details
         const enhancedProposals = proposals.map(proposal => {
             const proposalId = proposal.url.split('/').pop();
             const details = proposalDetails[`${dao.slug}-${proposalId}`];
-            const parsedDetails = details ? parseProposalDetails(details) : null;
-
             return {
                 ...proposal,
-                details: parsedDetails
+                details: details ? parseProposalDetails(details) : null
             };
         });
 
-        // Return enhanced DAO object
         return {
             ...dao,
             proposals: enhancedProposals,
@@ -142,7 +153,6 @@ export function createUnifiedDelegateProfile(delegateData, daoProposalResults, p
         };
     });
 
-    // Create unified profile
     return {
         address: delegateData.metadata?.sourceURL?.split('/').pop(),
         name: delegateData.metadata?.ogTitle?.split("'")[0],
@@ -154,3 +164,4 @@ export function createUnifiedDelegateProfile(delegateData, daoProposalResults, p
         }
     };
 }
+

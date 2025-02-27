@@ -1,25 +1,25 @@
-const path = require("path");
-const os = require("os"); 
-const winston = require("winston");
+import path from 'path';
+import os from 'os';
+import winston from 'winston';
 
 class Logger {
- static instance = null;
+  static instance = null;
 
- constructor() {
+  constructor() {
     this.logger = winston.createLogger({
-        format: winston.format.simple(),
-        transports: [
-          new winston.transports.Console(),
-          new winston.transports.File({
-            filename: path.join(os.homedir(), ".chatd", "service.log"),
-            maxSize: 1000000, // 1 MB
-            maxFiles: 1,
-          })
-        ]
+      format: winston.format.simple(),
+      transports: [
+        new winston.transports.Console(),
+        new winston.transports.File({
+          filename: path.join(os.homedir(), ".chatd", "service.log"),
+          maxSize: 1000000, // 1 MB
+          maxFiles: 1,
+        })
+      ]
     });
   }
 
- static getLogger() {
+  static getLogger() {
     if (this.instance === null) {
       this.instance = new this();
     }
@@ -27,17 +27,17 @@ class Logger {
   }
 }
 
-function info(msg) {
-    console.log(msg);
-    Logger.getLogger().logger.info(msg);
+function logInfo(msg) {
+  console.log(msg);
+  Logger.getLogger().logger.info(msg);
 }
 
-function error(msg) {
-    console.log(msg);
-    Logger.getLogger().logger.error(msg);
+function logErr(msg) {
+  console.log(msg);
+  Logger.getLogger().logger.error(msg);
 }
 
-module.exports = {
-    logInfo: info,
-    logErr: error
+export {
+  logInfo,
+  logErr
 }

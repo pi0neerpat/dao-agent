@@ -1,8 +1,8 @@
-const fs = require("fs");
-const os = require("os");
-const path = require("path");
-const { exec } = require("child_process");
-const { logInfo, logErr } = require("../logger.js");
+import fs from "fs";
+import os from "os";
+import path from "path";
+import { exec } from "child_process";
+import { logInfo, logErr } from "../logger.js";
 
 var OllamaServeType = {
   SYSTEM: "system", // ollama is installed on the system
@@ -133,7 +133,7 @@ class OllamaOrchestrator {
 
   async pull(model, fn) {
     logInfo("pulling model: " + model);
-    const stream = await this.ollama.pull({model: model, stream: true});
+    const stream = await this.ollama.pull({ model: model, stream: true });
     for await (const part of stream) {
       fn(part);
     }
@@ -141,7 +141,7 @@ class OllamaOrchestrator {
 
   async run(model, fn) {
     try {
-        await this.pull(model, fn);
+      await this.pull(model, fn);
     } catch (err) {
       logErr('failed to pull before run: ' + err);
       if (!err.message.includes("pull model manifest")) {
@@ -150,7 +150,7 @@ class OllamaOrchestrator {
       logInfo('chatd is running offline, failed to pull');
     }
     // load the model
-    const loaded = await this.ollama.chat({model: model});
+    const loaded = await this.ollama.chat({ model: model });
     // all done, return the loaded event to the callback
     fn(loaded);
   }
@@ -240,7 +240,7 @@ class OllamaOrchestrator {
       "content": ""
     }
     try {
-      const stream = await this.ollama.chat({model: model, messages: this.messages, stream: true});
+      const stream = await this.ollama.chat({ model: model, messages: this.messages, stream: true });
       for await (const part of stream) {
         assistant.content += part.message.content;
         fn(part);
@@ -289,7 +289,7 @@ async function serve() {
   return ollama.serve();
 }
 
-module.exports = {
+export {
   run,
   chat,
   abort,

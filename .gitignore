@@ -96,3 +96,5 @@ src/service/ollama/runners/*
 src/service/audio/runners/*
 !src/service/audio/runners/audio-capture-darwin
 !src/service/audio/runners/README.md
+profiles/
+output/
