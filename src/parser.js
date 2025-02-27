@@ -55,7 +55,7 @@ export function parseActiveProposals(daoData) {
 
     while ((match = proposalRegex.exec(daoData.markdown)) !== null) {
         const [_, title, url, status, date, votesFor, votesAgainst, totalVotes] = match;
-        
+
         proposals.push({
             title: title.trim(),
             url: url.trim(),
@@ -82,15 +82,15 @@ export function parseProposalDetails(proposalData) {
 
     const markdown = proposalData.markdown;
 
-    // Extract forum discussion links
+    // Extract forum discussion links - updated to include nouns.camp
     const forumLinks = [];
-    const forumRegex = /\[(?:Discussion|Forum).*?\]\((https?:\/\/(?:discourse|forum|gov).[^\)]+)\)/gi;
+    const forumRegex = /\[(?:Discussion|Forum).*?\]\((https?:\/\/(?:discourse|forum|gov|www\.nouns\.camp).[^\)]+)\)/gi;
     let forumMatch;
     while ((forumMatch = forumRegex.exec(markdown)) !== null) {
         forumLinks.push(forumMatch[1]);
     }
 
-    // Extract voting stats with better parsing
+    // Extract voting stats
     const votingInfo = markdown.match(/Quorum\s*(\d+)\s*of\s*(\d+)/);
     const votingStats = {
         quorumReached: votingInfo ? parseInt(votingInfo[1]) >= parseInt(votingInfo[2]) : false,
@@ -98,28 +98,35 @@ export function parseProposalDetails(proposalData) {
         quorumRequired: votingInfo ? parseInt(votingInfo[2]) : 0
     };
 
-    // Extract all sections with improved section detection
-    const sectionRegex = /#{2,3}\s+([^#\n]+)\n+([\s\S]+?)(?=#{2,3}|$)/g;
-    let sectionMatch;
-    const sections = {};
-    while ((sectionMatch = sectionRegex.exec(markdown)) !== null) {
-        const [_, title, content] = sectionMatch;
-        sections[title.trim()] = content.trim();
+    // Extract proposal content and comments
+    let description = '';
+    let comments = [];
+
+    // Find the proposal section
+    const proposalSection = markdown.match(/###### Proposal\s*([\s\S]*?)(?=\s*###### Current Votes|\s*$)/);
+
+    if (proposalSection) {
+        const content = proposalSection[1];
+        const parts = content.split(/\\\\\n\\\\\n/);
+
+        // First part is the description, everything after is comments
+        description = parts[0]?.trim() || '';
+
+        // Collect all remaining parts as comments
+        if (parts.length > 1) {
+            comments = parts.slice(1)
+                .map(comment => comment.trim())
+                .filter(comment => comment.length > 0);
+        }
     }
 
-    // Build flattened proposal details
     return {
         proposedBy: markdown.match(/by\s*\[(.*?)\]/)?.[1] || '',
         proposedDate: markdown.match(/Proposed on: ([^<\n]+)/)?.[1] || '',
         forumLinks,
         votingStats,
-        summary: sections['Summary'] || sections['Description'] || '',
-        description: sections['Description'] || '',
-        rationale: sections['Rationale'] || sections['Motivation'] || '',
-        specification: sections['Specification'] || sections['Implementation'] || '',
-        impact: sections['Impact'] || sections['Impact Overview'] || '',
-        // Include all other sections as-is
-        ...sections
+        description,
+        comments
     };
 }
 
@@ -138,7 +145,7 @@ export function createUnifiedDelegateProfile(delegateData, daoProposalResults, p
             const details = proposalDetails[`${dao.slug}-${proposalId}`];
             return {
                 ...proposal,
-                details: details ? parseProposalDetails(details) : null
+                ...parseProposalDetails(details)
             };
         });
 

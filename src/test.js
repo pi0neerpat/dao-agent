@@ -7,8 +7,9 @@ import {
     parseActiveProposals,
     createUnifiedDelegateProfile
 } from './parser.js';
-import { askAboutProposal, summarizeProposal } from './service/proposalAnalyzer.js';
+import { askAboutProposal, saveAnalysisToFile, summarizeProposal } from './service/proposalAnalyzer.js';
 import { serve } from './service/ollama/ollama.js';
+import { getFormattedTimestamp } from './utils.js';
 
 config();
 
@@ -17,17 +18,6 @@ const DELEGATE_ADDRESS = '0x1111fd96fD579642c0D589cd477188e29b47b738';
 // 0x9492510bbcb93b6992d8b7bb67888558e12dcac4
 const DAO_NAME = 'nounsdao';
 
-function getFormattedTimestamp() {
-    const now = new Date();
-    return now.toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-    }).replace(/[/:]/g, '-');
-}
 
 async function test() {
     try {
@@ -122,43 +112,8 @@ async function test() {
                 });
             }
         }
+        await saveAnalysisToFile(analysisResults);
 
-        // Save analysis to file
-        const timestamp = getFormattedTimestamp();
-        const outputDir = join(process.cwd(), 'output');
-        const filename = `analysis-${timestamp}.md`;
-        const outputPath = join(outputDir, filename);
-
-        mkdirSync(outputDir, { recursive: true });
-
-        const markdown = `# Proposal Analysis ${timestamp}
-
-## Delegate Information
-- Name: ${analysisResults.name}
-- Address: ${analysisResults.address}
-
-## Analysis Results
-${analysisResults.daos.map(dao => `
-### ${dao.name}
-${dao.proposals.map(proposal => `
-#### ${proposal.title}
-- Status: ${proposal.status}
-- Date: ${proposal.date}
-- Votes: ${proposal.votesFor} For, ${proposal.votesAgainst} Against (Total: ${proposal.totalVotes})
-
-**Summary:**
-${proposal.summary}
-
-**Questions & Answers:**
-${proposal.qa.map(qa => `
-Q: ${qa.question}
-A: ${qa.answer}
-`).join('\n')}
-`).join('\n')}
-`).join('\n')}`;
-
-        writeFileSync(outputPath, markdown);
-        console.log(`\n📝 Analysis saved to: ${outputPath}`);
 
     } catch (error) {
         console.error('Test failed:', error);
