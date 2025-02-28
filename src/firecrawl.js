@@ -33,7 +33,7 @@ class FirecrawlService {
             if (!response.success) {
                 throw new Error(`Failed to scrape URL: ${response.error}`);
             }
-            console.log(JSON.stringify(response))
+            // console.log(JSON.stringify(response))
             return response;
         } catch (error) {
             console.error('Scraping error:', error);
@@ -70,7 +70,6 @@ class FirecrawlService {
         const results = await Promise.allSettled(
             daoList.map(dao => this.scrapeDAOProposals(dao.slug))
         );
-
         return results.map((result, index) => ({
             dao: daoList[index],
             data: result.status === 'fulfilled' ? result.value : null,

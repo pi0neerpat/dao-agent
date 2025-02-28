@@ -49,21 +49,30 @@ export function parseActiveProposals(daoData) {
     }
 
     const proposals = [];
-    // Simplified regex to match the table format
-    const proposalRegex = /\| \[([^\]]+)\]\(([^)]+)\)<br>([^<]+)<br>([^|]+?) \| ([0-9]+) \| ([0-9]+) \| ([0-9]+)/g;
-    let match;
+    // Updated regex to match new table format:
+    // | [Title](url)<br>Status<br>Date | Votes for | Votes against | Total votes<br>N addresses |
+    const proposalRegex = /\| \[([^\]]+)\]\(([^)]+)\)<br>([^<]+)<br>([^|]+?) \| ([0-9.KMB]+) \| ([0-9.KMB]+) \| ([0-9.KMB]+)(?:<br>([0-9]+) addresses)? \|/g;
 
+    let match;
     while ((match = proposalRegex.exec(daoData.markdown)) !== null) {
-        const [_, title, url, status, date, votesFor, votesAgainst, totalVotes] = match;
+        const [_, title, url, status, date, votesFor, votesAgainst, totalVotes, addresses] = match;
+
+        // Convert vote numbers (e.g., "5.33M" to number)
+        const parseVotes = (voteStr) => {
+            const num = parseFloat(voteStr.replace(/[KMB]/g, ''));
+            const mult = voteStr.includes('K') ? 1000 : voteStr.includes('M') ? 1000000 : 1;
+            return Math.round(num * mult);
+        };
 
         proposals.push({
             title: title.trim(),
             url: url.trim(),
             status: status.trim(),
             date: date.trim(),
-            votesFor: parseInt(votesFor),
-            votesAgainst: parseInt(votesAgainst),
-            totalVotes: parseInt(totalVotes)
+            votesFor: parseVotes(votesFor),
+            votesAgainst: parseVotes(votesAgainst),
+            totalVotes: parseVotes(totalVotes),
+            voterCount: addresses ? parseInt(addresses) : 0
         });
     }
 
@@ -82,9 +91,9 @@ export function parseProposalDetails(proposalData) {
 
     const markdown = proposalData.markdown;
 
-    // Extract forum discussion links - updated to include nouns.camp
+    // Extract forum discussion links
     const forumLinks = [];
-    const forumRegex = /\[(?:Discussion|Forum).*?\]\((https?:\/\/(?:discourse|forum|gov|www\.nouns\.camp).[^\)]+)\)/gi;
+    const forumRegex = /\[(?:Discussion|Forum).*?\]\((https?:\/\/(?:discourse|forum|gov).[^\)]+)\)/gi;
     let forumMatch;
     while ((forumMatch = forumRegex.exec(markdown)) !== null) {
         forumLinks.push(forumMatch[1]);
@@ -98,25 +107,26 @@ export function parseProposalDetails(proposalData) {
         quorumRequired: votingInfo ? parseInt(votingInfo[2]) : 0
     };
 
-    // Extract proposal content and comments
+    // Extract the full proposal content between ###### Proposal and the next section
     let description = '';
     let comments = [];
 
-    // Find the proposal section
-    const proposalSection = markdown.match(/###### Proposal\s*([\s\S]*?)(?=\s*###### Current Votes|\s*$)/);
+    // Use a more precise regex to capture everything after ###### Proposal
+    const proposalContent = markdown.match(/###### Proposal\s*([\s\S]*?)(?=\s*######|$)/);
 
-    if (proposalSection) {
-        const content = proposalSection[1];
+    if (proposalContent) {
+        const content = proposalContent[1].trim();
+        // Split on the custom delimiter that separates description from comments
         const parts = content.split(/\\\\\n\\\\\n/);
 
-        // First part is the description, everything after is comments
-        description = parts[0]?.trim() || '';
+        // First part is the description
+        description = parts[0].trim();
 
-        // Collect all remaining parts as comments
+        // Everything after the first delimiter is comments
         if (parts.length > 1) {
             comments = parts.slice(1)
                 .map(comment => comment.trim())
-                .filter(comment => comment.length > 0);
+                .filter(Boolean);
         }
     }
 

@@ -17,7 +17,7 @@ const DELEGATE_ADDRESS = '0x1111fd96fD579642c0D589cd477188e29b47b738';
 
 // 0x9492510bbcb93b6992d8b7bb67888558e12dcac4
 const DAO_NAME = 'nounsdao';
-
+const DAO_MAX_QUERY = 1
 
 async function test() {
     try {
@@ -32,20 +32,19 @@ async function test() {
         console.log('📊 Fetching delegate data and proposals...');
         const delegateData = await firecrawl.scrapeDelegate(DELEGATE_ADDRESS, DAO_NAME);
         const daoMemberships = parseDelegateMemberships(delegateData);
-
-        // Limit to first DAO only
-        const limitedDaoMemberships = daoMemberships.slice(0, 1);
-        const proposalResults = await firecrawl.scrapeAllDAOProposals(limitedDaoMemberships);
+        // console.log('📊 DAO memberships:', daoMemberships);
+        const proposalList = await firecrawl.scrapeAllDAOProposals(daoMemberships.slice(0, DAO_MAX_QUERY));
+        // console.log('📊 DAO proposals:', proposalList);
 
         // Fetch proposal details - limited to first 3 proposals
         console.log('📝 Fetching proposal details...');
         const proposalDetails = {};
-        for (const result of proposalResults) {
+        for (const result of proposalList) {
             if (!result.error && result.data) {
                 const allProposals = parseActiveProposals(result.data);
                 const limitedProposals = allProposals.slice(0, 3); // Only first 3 proposals
                 const details = await firecrawl.scrapeAllProposalDetails(limitedProposals, result.dao.slug);
-
+                console.log(details)
                 details.forEach(detail => {
                     if (detail.details) {
                         proposalDetails[`${result.dao.slug}-${detail.proposalId}`] = detail.details;
@@ -56,7 +55,7 @@ async function test() {
 
         // Create unified delegate profile
         console.log('🔄 Creating unified delegate profile...');
-        const profile = createUnifiedDelegateProfile(delegateData, proposalResults, proposalDetails);
+        const profile = createUnifiedDelegateProfile(delegateData, proposalList, proposalDetails);
 
         // Save profile as before
         const profileTimestamp = getFormattedTimestamp();
