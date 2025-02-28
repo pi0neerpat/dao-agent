@@ -7,17 +7,11 @@ import {
     createUnifiedDelegateProfile
 } from './parser.js';
 import { askAboutProposal, saveAnalysisToFile, summarizeProposal } from './service/proposalAnalyzer.js';
-import { serve } from './service/ollama/ollama.js';
 import { getFormattedTimestamp } from './utils.js';
 
 const PROPOSAL_LIMIT = 3
 
 export const getUserProfile = async (delegateAddress, daoResultsLimit) => {
-    // Initialize Ollama and services
-    console.log('🤖 Initializing Ollama service...');
-    const serveType = await serve();
-    console.log(`Ollama initialized (${serveType})`);
-
     const firecrawl = new FirecrawlService(process.env.FIRECRAWL_API_KEY);
 
     // Get delegate data and proposals

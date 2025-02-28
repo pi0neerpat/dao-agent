@@ -37,28 +37,6 @@ function initializeSession(userId) {
  */
 async function showSurveyPair(chatId, pairIndex) {
     const pair = pairs[pairIndex];
-    
-    // First, send both images as a media group
-    await bot.sendMediaGroup(chatId, [
-        {
-            type: 'photo',
-            media: pair.person1.imageUrl,
-            caption: `Option 1: ${pair.person1.name}`
-        },
-        {
-            type: 'photo',
-            media: pair.person2.imageUrl,
-            caption: `Option 2: ${pair.person2.name}`
-        }
-    ]);
-
-    // Then send the detailed message with buttons
-    const message = `Round ${pairIndex + 1}/4\n\n` +
-        `Option 1: ${pair.person1.name}\n` +
-        `Attributes: ${pair.person1.attributes.join(', ')}\n\n` +
-        `Option 2: ${pair.person2.name}\n` +
-        `Attributes: ${pair.person2.attributes.join(', ')}\n\n` +
-        `Choose your preferred option:`;
 
     const keyboard = {
         inline_keyboard: [
@@ -69,9 +47,10 @@ async function showSurveyPair(chatId, pairIndex) {
         ]
     };
 
-    await bot.sendMessage(chatId, message, {
-        reply_markup: keyboard,
-        parse_mode: 'HTML'
+    // Send single image with choice buttons
+    await bot.sendPhoto(chatId, pair.imageUrl, {
+        caption: `Round ${pairIndex + 1}/4\nWho resonates with you more?`,
+        reply_markup: keyboard
     });
 }
 
@@ -81,8 +60,29 @@ async function showSurveyPair(chatId, pairIndex) {
  * @param {number} chatId - Telegram chat ID
  * @param {string} choice - Selected choice (person1 or person2)
  */
-function handleSurveyResponse(userId, chatId, choice) {
-    // ...implementation needed...
+async function handleSurveyResponse(userId, chatId, choice) {
+    const session = userSessions.get(userId);
+    if (!session) {
+        bot.sendMessage(chatId, "Sorry, your session has expired. Please start over with /start");
+        return;
+    }
+
+    // Save the answer
+    session.answers.push(choice);
+
+    // Move to next pair
+    session.currentPair++;
+
+    // Check if survey is complete
+    if (session.currentPair >= pairs.length) {
+        // Show results if all pairs are done
+        await displayResults(chatId, session.answers);
+        // Clean up session
+        userSessions.delete(userId);
+    } else {
+        // Show next pair
+        await showSurveyPair(chatId, session.currentPair);
+    }
 }
 
 /**
@@ -91,7 +91,26 @@ function handleSurveyResponse(userId, chatId, choice) {
  * @param {Array<string>} answers - Collection of user answers
  */
 async function displayResults(chatId, answers) {
-    // ...implementation needed...
+    try {
+        // Show loading message
+        await bot.sendMessage(chatId, "🔮 Analyzing your choices...");
+
+        // Get personalized results
+        const summary = await getSurveyResults(answers);
+
+        // Send results with some formatting
+        await bot.sendMessage(chatId,
+            "🎭 Your Web3 Persona Analysis:\n\n" +
+            summary + "\n\n" +
+            "Want to try again? Just type /start!"
+        );
+    } catch (error) {
+        console.error('Error displaying results:', error);
+        await bot.sendMessage(chatId,
+            "Sorry, there was an error generating your results. " +
+            "Please try again with /start"
+        );
+    }
 }
 
 // Command handler for starting the survey
@@ -104,7 +123,7 @@ bot.onText(/\/start/, (msg) => {
 
     // Welcome message
     bot.sendMessage(chatId,
-        "Welcome to the Web3 Persona Survey! 🌟\n\n" +
+        "Hi, I'm your DAO Personal Assistant! 🌟\n\n" +
         "You'll be presented with 4 pairs of crypto personalities.\n" +
         "For each pair, choose the one that resonates most with your values.\n" +
         "At the end, you'll receive your personalized Web3 persona!\n\n" +

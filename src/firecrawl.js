@@ -7,7 +7,7 @@ class FirecrawlService {
         if (!this.useMocks) {
             this.app = new FirecrawlApp({ apiKey });
         }
-        console.log(`FirecrawlService initialized with ${this.useMocks ? 'mock' : 'live'} data`);
+        console.log(`🔥 FirecrawlService initialized with ${this.useMocks ? 'mock' : 'live'} data`);
     }
 
     async scrapeUrl(url, options = {}) {

@@ -4,18 +4,18 @@ const MODEL = process.env.OLLAMA_MODEL || 'mistral'
 
 export const pairs = [
     {
-        imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/round1.jpg",
+        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round1.png",
         person1: {
+            name: "Satoshi Nakamoto",
+            attributes: ["Decentralization", "Trustlessness", "Sound Money"]
+        },
+        person2: {
             name: "Vitalik Buterin",
             attributes: ["Open Participation", "Censorship Resistance", "Public Goods"]
         },
-        person2: {
-            name: "Satoshi Nakamoto",
-            attributes: ["Decentralization", "Trustlessness", "Sound Money"]
-        }
     },
     {
-        imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/round2.jpg",
+        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round2.png",
         person1: {
             name: "Elon Musk",
             attributes: ["People’s Crypto", "Cautious Innovation", "Sustainability"]
@@ -25,30 +25,26 @@ export const pairs = [
             attributes: ["Financial Sovereignty", "Self-Custody", "Liberty"]
         }
     },
-        }
-    },
     {
+        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round3.png",
         person1: {
             name: "Danny Ryan",
-            attributes: ["Decentralized Governance", "Proof-of-Stake", "Transparency"],
-            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/danny.jpg"
+            attributes: ["Decentralized Governance", "Proof-of-Stake", "Transparency"]
         },
         person2: {
             name: "Aya Miyaguchi",
-            attributes: ["Community Empowerment", "Core Values", "Infinite Garden"],
-            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/aya.jpg"
+            attributes: ["Community Empowerment", "Core Values", "Infinite Garden"]
         }
     },
     {
+        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round4.png",
         person1: {
             name: "Michael Saylor",
-            attributes: ["Digital Gold", "Inflation Hedge", "Institutional Adoption"],
-            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/michael.jpg"
+            attributes: ["Digital Gold", "Inflation Hedge", "Institutional Adoption"]
         },
         person2: {
             name: "Brian Armstrong",
-            attributes: ["Economic Freedom", "Open Financial System", "Custodianship"],
-            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/brian.jpg"
+            attributes: ["Economic Freedom", "Open Financial System", "Custodianship"]
         }
     }
 ];
