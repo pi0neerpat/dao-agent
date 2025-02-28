@@ -110,6 +110,10 @@ Please provide a clear and concise answer based on the proposal details above.
     }
 }
 
+export async function analyzeProposalsForProfile(profile) {
+    
+}
+
 export async function saveAnalysisToFile(analysisResults) {
     // Save analysis to file
     const timestamp = getFormattedTimestamp();

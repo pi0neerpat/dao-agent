@@ -2,8 +2,9 @@ import { chat } from './service/ollama/ollama.js';
 
 const MODEL = process.env.OLLAMA_MODEL || 'mistral'
 
-const pairs = [
+export const pairs = [
     {
+        imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/round1.jpg",
         person1: {
             name: "Vitalik Buterin",
             attributes: ["Open Participation", "Censorship Resistance", "Public Goods"]
@@ -14,6 +15,7 @@ const pairs = [
         }
     },
     {
+        imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/round2.jpg",
         person1: {
             name: "Elon Musk",
             attributes: ["People’s Crypto", "Cautious Innovation", "Sustainability"]
@@ -23,24 +25,30 @@ const pairs = [
             attributes: ["Financial Sovereignty", "Self-Custody", "Liberty"]
         }
     },
+        }
+    },
     {
         person1: {
             name: "Danny Ryan",
-            attributes: ["Decentralized Governance", "Proof-of-Stake", "Transparency"]
+            attributes: ["Decentralized Governance", "Proof-of-Stake", "Transparency"],
+            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/danny.jpg"
         },
         person2: {
             name: "Aya Miyaguchi",
-            attributes: ["Community Empowerment", "Core Values", "Infinite Garden"]
+            attributes: ["Community Empowerment", "Core Values", "Infinite Garden"],
+            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/aya.jpg"
         }
     },
     {
         person1: {
             name: "Michael Saylor",
-            attributes: ["Digital Gold", "Inflation Hedge", "Institutional Adoption"]
+            attributes: ["Digital Gold", "Inflation Hedge", "Institutional Adoption"],
+            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/michael.jpg"
         },
         person2: {
             name: "Brian Armstrong",
-            attributes: ["Economic Freedom", "Open Financial System", "Custodianship"]
+            attributes: ["Economic Freedom", "Open Financial System", "Custodianship"],
+            imageUrl: "https://raw.githubusercontent.com/dao-agent/web3-personas/main/images/brian.jpg"
         }
     }
 ];
