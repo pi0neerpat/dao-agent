@@ -41,7 +41,7 @@ class FirecrawlService {
         }
     }
 
-    async scrapeDelegate(walletAddress, daoName) {
+    async scrapeDelegate(walletAddress) {
         return this.scrapeUrl(
             `https://www.tally.xyz/profile/${walletAddress}`
 

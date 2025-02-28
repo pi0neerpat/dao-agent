@@ -6,7 +6,7 @@ import { getFormattedTimestamp } from '../utils.js';
 import { join } from 'path';
 import { writeFileSync, mkdirSync } from 'fs';
 
-const MODEL = process.env.OLLAMA_MODEL
+const MODEL = process.env.OLLAMA_MODEL || 'mistral'
 
 const formattedProposalDetails = (proposal) => {
     // Extract key sections from description if they exist
