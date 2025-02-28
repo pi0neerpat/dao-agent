@@ -4,7 +4,7 @@ const MODEL = process.env.OLLAMA_MODEL || 'mistral'
 
 export const pairs = [
     {
-        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round1.png",
+        imageUrl: "https://github.com/pi0neerpat/dao-agent/blob/main/images/round1.png?raw=true",
         person1: {
             name: "Satoshi Nakamoto",
             attributes: ["Decentralization", "Trustlessness", "Sound Money"]
@@ -15,7 +15,7 @@ export const pairs = [
         },
     },
     {
-        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round2.png",
+        imageUrl: "https://github.com/pi0neerpat/dao-agent/blob/main/images/round2.png?raw=true",
         person1: {
             name: "Elon Musk",
             attributes: ["People’s Crypto", "Cautious Innovation", "Sustainability"]
@@ -26,7 +26,7 @@ export const pairs = [
         }
     },
     {
-        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round3.png",
+        imageUrl: "https://github.com/pi0neerpat/dao-agent/blob/main/images/round3.png?raw=true",
         person1: {
             name: "Danny Ryan",
             attributes: ["Decentralized Governance", "Proof-of-Stake", "Transparency"]
@@ -37,7 +37,7 @@ export const pairs = [
         }
     },
     {
-        imageUrl: "https://raw.githubusercontent.com/pi0neerpat/dao-agent/main/images/round4.png",
+        imageUrl: "https://github.com/pi0neerpat/dao-agent/blob/main/images/round4.png?raw=true",
         person1: {
             name: "Michael Saylor",
             attributes: ["Digital Gold", "Inflation Hedge", "Institutional Adoption"]

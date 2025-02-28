@@ -46,10 +46,11 @@ async function showSurveyPair(chatId, pairIndex) {
             ]
         ]
     };
+    console.log(pair.imageUrl)
 
     // Send single image with choice buttons
     await bot.sendPhoto(chatId, pair.imageUrl, {
-        caption: `Round ${pairIndex + 1}/4\nWho resonates with you more?`,
+        // caption: `Round ${pairIndex + 1}/4\nWho resonates with you more?`,
         reply_markup: keyboard
     });
 }
