@@ -3,14 +3,20 @@ config();
 
 import TelegramBot from 'node-telegram-bot-api';
 import { getSurveyResults } from './survey.js';
-import { pairs } from './survey.js'; // Add this import
+import { pairs } from './survey.js';
+import {
+    getOrCreateUser,
+    createSession,
+    updateSession,
+    getActiveSession,
+    updateUserPersona
+} from './supabase.js';
 
 // Bot configuration
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(TOKEN, { polling: true });
 
-// Store user survey sessions
-const userSessions = new Map();
+// Remove userSessions Map as we're using Supabase now
 
 /**
  * Represents a user's survey session
@@ -24,14 +30,11 @@ const userSessions = new Map();
 /**
  * Initializes a new survey session for a user
  * @param {number} userId - Telegram user ID
+ * @param {string} username - Telegram username
  */
-function initializeSession(userId) {
-    userSessions.set(userId, {
-        currentPair: 0,
-        answers: [],
-        persona: null,
-        surveyComplete: false
-    });
+async function initializeSession(userId, username) {
+    await getOrCreateUser(userId, username);
+    return await createSession(userId);
 }
 
 /**
@@ -63,27 +66,30 @@ async function showSurveyPair(chatId, pairIndex) {
  * @param {string} choice - Selected choice (person1 or person2)
  */
 async function handleSurveyResponse(userId, chatId, choice) {
-    const session = userSessions.get(userId);
-    if (!session) {
-        bot.sendMessage(chatId, "Sorry, your session has expired. Please start over with /start");
-        return;
-    }
+    try {
+        const session = await getActiveSession(userId);
+        if (!session) {
+            bot.sendMessage(chatId, "Sorry, your session has expired. Please start over with /start");
+            return;
+        }
 
-    // Save the answer
-    session.answers.push(choice);
+        const updatedAnswers = [...session.answers, choice];
+        const updates = {
+            answers: updatedAnswers,
+            current_pair: session.current_pair + 1
+        };
 
-    // Move to next pair
-    session.currentPair++;
-
-    // Check if survey is complete
-    if (session.currentPair >= pairs.length) {
-        // Show results if all pairs are done
-        await displayResults(chatId, session.answers);
-        // Clean up session
-        userSessions.delete(userId);
-    } else {
-        // Show next pair
-        await showSurveyPair(chatId, session.currentPair);
+        if (session.current_pair + 1 >= pairs.length) {
+            updates.is_complete = true;
+            await updateSession(session.id, updates);
+            await displayResults(chatId, updatedAnswers, userId);
+        } else {
+            await updateSession(session.id, updates);
+            await showSurveyPair(chatId, session.current_pair + 1);
+        }
+    } catch (error) {
+        console.error('Error handling survey response:', error);
+        bot.sendMessage(chatId, "An error occurred. Please try again with /start");
     }
 }
 
@@ -91,18 +97,16 @@ async function handleSurveyResponse(userId, chatId, choice) {
  * Processes and displays the final survey results
  * @param {number} chatId - Telegram chat ID
  * @param {Array<string>} answers - Collection of user answers
+ * @param {number} userId - Telegram user ID
  */
-async function displayResults(chatId, answers) {
+async function displayResults(chatId, answers, userId) {
     try {
         await bot.sendMessage(chatId, "🔮 Analyzing your choices...");
 
         const summary = await getSurveyResults(answers);
 
-        // Store persona in session for later use
-        const userId = chatId;
-        const session = userSessions.get(userId);
-        session.persona = summary;
-        session.surveyComplete = true;
+        // Store persona in database
+        await updateUserPersona(userId, summary);
 
         // Send persona results
         await bot.sendMessage(chatId,
@@ -112,9 +116,8 @@ async function displayResults(chatId, answers) {
 
         await bot.sendMessage(chatId,
             "🌱 DAOs need more Regenerates like you! \n\n" +
-            "I can make voting easier by summarizing proposals, and predicting 🤔 how your persona might vote. Try it out:\n" +
-            "• Paste a wallet address or ENS name\n" +
-            "• /analyze <wallet_address>\n"
+            "I can make voting easier by digesting active proposals and predicting 🤔 how your persona might vote. Try it out:\n" +
+            "• /digest <wallet_address>\n"
         );
 
     } catch (error) {
@@ -123,7 +126,6 @@ async function displayResults(chatId, answers) {
             "Sorry, there was an error generating your results. " +
             "Please try again with /start"
         );
-        userSessions.delete(chatId);
     }
 }
 
@@ -163,20 +165,20 @@ async function analyzeDaoProposals(wallet, persona) {
 bot.onText(/\/start/, (msg) => {
     const userId = msg.from.id;
     const chatId = msg.chat.id;
+    const username = msg.from.username || null;
 
-    // Initialize new session
-    initializeSession(userId);
-
-    // Welcome message
-    bot.sendMessage(chatId,
-        "Hi, I'm your DAO Personal Assistant! 🌟\n\n" +
-        "You'll be presented with 4 pairs of crypto personalities.\n" +
-        "For each pair, choose the one that resonates most with your values.\n" +
-        "At the end, you'll receive your personalized Web3 persona!\n\n" +
-        "Let's begin! 🚀"
-    ).then(() => {
-        // Show first pair after welcome message
-        showSurveyPair(chatId, 0);
+    // Initialize new session with username
+    initializeSession(userId, username).then(() => {
+        // Welcome message
+        bot.sendMessage(chatId,
+            "Hi" + (username ? ` @${username}` : "") + ", I'm your DAO Delegate Assistant! 🌟\n\n" +
+            "You'll be presented with 4 pairs of crypto personalities. For each pair, choose the one that resonates most with your values.\n" +
+            "At the end, you'll receive your personalized Web3 persona!\n\n" +
+            "Let's begin! 🚀"
+        ).then(() => {
+            // Show first pair after welcome message
+            showSurveyPair(chatId, 0);
+        });
     });
 });
 
@@ -199,25 +201,32 @@ bot.on('callback_query', (query) => {
  * @param {number} userId - User ID
  * @param {string} walletAddress - Wallet or ENS to analyze
  */
-async function processWalletAnalysis(chatId, userId, walletAddress) {
-    const session = userSessions.get(userId);
-    if (!session?.surveyComplete) {
-        await bot.sendMessage(chatId,
-            "⚠️ Please complete the persona survey first using /start"
-        );
-        return;
-    }
-
+async function processWalletAnalysis(chatId, userId, walletAddressInput) {
     try {
-        if (await validateWalletInput(walletAddress)) {
+        const user = await getOrCreateUser(userId);
+        if (!user.persona) {
+            await bot.sendMessage(chatId,
+                "⚠️ Please complete the persona survey first using /start"
+            );
+            return;
+        }
+
+        if (await validateWalletInput(walletAddressInput)) {
+            if (walletAddressInput.toLowerCase().endsWith('.eth')) {
+                // Resolve ENS name to address
+                walletAddress = await resolveENS(walletAddressInput);
+            }
             await bot.sendMessage(chatId, "🔍 Processing your wallet...");
 
-            const analysis = await analyzeDaoProposals(walletAddress, session.persona);
+            // Store wallet address
+            await updateUserPersona(userId, user.persona, walletAddress);
+
+            const analysis = await analyzeDaoProposals(walletAddress, user.persona);
 
             await bot.sendMessage(chatId,
                 "Based on your Web3 persona and DAO interactions:\n\n" +
                 analysis + "\n\n" +
-                "Want to analyze another wallet? Use /analyze <wallet_address>"
+                "Want to analyze another wallet? Use /digest <wallet_address>"
             );
         } else {
             await bot.sendMessage(chatId,
@@ -234,7 +243,7 @@ async function processWalletAnalysis(chatId, userId, walletAddress) {
 }
 
 // Add analyze command handler
-bot.onText(/\/analyze(?:@\w+)?(?: (.+))?/, async (msg, match) => {
+bot.onText(/\/digest(?:@\w+)?(?: (.+))?/, async (msg, match) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const walletAddress = match[1]?.trim();
@@ -254,10 +263,10 @@ bot.onText(/\/analyze(?:@\w+)?(?: (.+))?/, async (msg, match) => {
 bot.on('message', async (msg) => {
     const userId = msg.from.id;
     const chatId = msg.chat.id;
-    const session = userSessions.get(userId);
+    const session = await getActiveSession(userId);
 
     // Only process text messages when waiting for wallet address
-    if (!msg.text || !session || !session.surveyComplete || msg.text.startsWith('/')) {
+    if (!msg.text || !session || !session.is_complete || msg.text.startsWith('/')) {
         return;
     }
 

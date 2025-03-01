@@ -15,8 +15,10 @@
   "author": "pi0neerpat",
   "license": "MIT",
   "dependencies": {
+    "@ethersproject/providers": "^5.8.0",
     "@mendable/firecrawl-js": "^1.18.2",
     "@orama/orama": "^2.0.7",
+    "@supabase/supabase-js": "^2.49.1",
     "@xenova/transformers": "^2.6.2",
     "axios": "^1.7.9",
     "crawlee": "^3.12.2",
