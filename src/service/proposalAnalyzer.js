@@ -59,7 +59,7 @@ You are a web3 DAO expert, and you use industry standard language to convey comp
 3. Voting status and timeline
 4. Key concerns or benefits
 
-The summary should only be 3 sentences long.
+The summary should 3 short bullet points of the high level details.
 
 Proposal details:
 <document>

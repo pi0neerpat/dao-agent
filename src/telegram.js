@@ -121,7 +121,7 @@ async function displayResults(chatId, answers, userId) {
         await bot.sendMessage(chatId,
             "🌱 DAOs need Regenerates like you to participate more!\n\n" +
             "Let's make voting simple and fun. I can generate a DAO digest for you, which includes a prediction of how you would vote:\n" +
-            "• /digest <wallet_address>\n"
+            "• /digest <address or ENS>\n"
         );
 
     } catch (error) {
@@ -306,7 +306,7 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
             await sendAnalysisResults(chatId, analysis);
 
             await bot.sendMessage(chatId,
-                "Want to analyze another wallet? Use /digest <wallet_address>"
+                "Want to analyze another wallet? Use /digest <address or ENS>"
             );
         } else {
             await bot.sendMessage(chatId,
@@ -331,7 +331,7 @@ bot.onText(/\/digest(?:@\w+)?(?: (.+))?/, async (msg, match) => {
     if (!walletAddress) {
         await bot.sendMessage(chatId,
             "Please provide a wallet address or ENS name.\n" +
-            "Usage: /analyze <wallet_address>"
+            "Usage: /digest <address or ENS>"
         );
         return;
     }
