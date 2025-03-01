@@ -19,6 +19,7 @@ import { analyzeProposalsForProfile } from './service/proposalAnalyzer.js';
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(TOKEN, { polling: true });
 
+const DAO_RESULTS_LIMIT = process.env.DAO_RESULTS_LIMIT || 3
 // Remove userSessions Map as we're using Supabase now
 
 /**
@@ -205,6 +206,39 @@ bot.on('callback_query', (query) => {
 });
 
 /**
+ * Formats the analysis results into a structured message
+ * @param {Array<Object>} analysis - Analysis results
+ * @returns {string} - Formatted message
+ */
+async function formatAnalysisResults(analysis) {
+    let message = '📊 *Your DAO Digest*\n\n';
+
+    for (const dao of analysis) {
+        // Format DAO header with stats
+        message += `*${dao.name}*\n`;
+        message += `🗳 Your Votes: ${dao.votes}\n`;
+        message += `💪 Your Voting Power: ${dao.percentOfDelegated}\n`;
+
+        if (dao.proposals.length === 0) {
+            message += '❌ No active proposals\n\n';
+            continue;
+        }
+
+        // Format each proposal
+        message += '\n📜 *Active Proposals:*\n';
+        for (const proposal of dao.proposals) {
+            message += `\n*${proposal.name}*\n`;
+            message += `📝 *Summary:* ${proposal.summary}\n`;
+            message += `🗳 *Predicted Vote:* ${proposal.predictedVote}\n`;
+            message += `💭 *Reason:* ${proposal.predictedVoteReason}\n`;
+        }
+        message += '\n-------------------\n\n';
+    }
+
+    return message;
+}
+
+/**
  * Processes a wallet address and returns DAO analysis
  * @param {number} chatId - Telegram chat ID
  * @param {number} userId - User ID
@@ -219,25 +253,26 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
             );
             return;
         }
-        let walletAddress
+
+        let walletAddress = walletAddressInput;
         if (await validateWalletInput(walletAddressInput)) {
-            await bot.sendMessage(chatId, "🔍 Looking up your DAOs...");
+            await bot.sendMessage(chatId, "🔍 Looking up your DAOs...\n(this may take a while)");
+
             if (walletAddressInput.toLowerCase().endsWith('.eth')) {
-                // Resolve ENS name to address
                 walletAddress = await resolveENS(walletAddressInput);
-            }
-            if (!walletAddress) {
-                throw new Error(`Could not resolve wallet address for: ${walletAddressInput}`);
+                if (!walletAddress) {
+                    throw new Error(`Could not resolve wallet address for: ${walletAddressInput}`);
+                }
             }
 
             // Store wallet address
             await updateUserPersona(userId, user.persona, walletAddress);
 
             const analysis = await analyzeDaoProposals(walletAddress, user.persona);
+            const formattedMessage = await formatAnalysisResults(analysis);
 
+            await bot.sendMessage(chatId, formattedMessage, { parse_mode: 'Markdown' });
             await bot.sendMessage(chatId,
-                "Here are the current active proposals from your DAOs:\n\n" +
-                analysis + "\n\n" +
                 "Want to analyze another wallet? Use /digest <wallet_address>"
             );
         } else {
@@ -249,7 +284,7 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
         console.error('Error processing wallet:', error);
         await bot.sendMessage(chatId,
             "Sorry, there was an error processing your wallet. " +
-            "Please try again or start over with /start"
+            error.message
         );
     }
 }

@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node src/telegram.js",
     "test": "node src/test.js",
-    "dev": "nodemon src/telegram.js",
+    "dev": "nodemon exec src/telegram.js --watch src",
     "watch": "nodemon exec src/test.js --watch src"
   },
   "keywords": [],

@@ -150,14 +150,20 @@ export function createUnifiedDelegateProfile(delegateData, daoProposalResults, p
         const daoResult = daoProposalResults.find(r => r.dao.slug === dao.slug);
         const proposals = daoResult?.data ? parseActiveProposals(daoResult.data) : [];
 
-        const enhancedProposals = proposals.map(proposal => {
-            const proposalId = proposal.url.split('/').pop();
-            const details = proposalDetails[`${dao.slug}-${proposalId}`];
-            return {
-                ...proposal,
-                ...parseProposalDetails(details)
-            };
-        });
+        // Only include proposals that have complete details
+        const enhancedProposals = proposals
+            .map(proposal => {
+                const proposalId = proposal.url.split('/').pop();
+                const details = proposalDetails[`${dao.slug}-${proposalId}`];
+
+                if (!details) return null;
+
+                return {
+                    ...proposal,
+                    ...parseProposalDetails(details)
+                };
+            })
+            .filter(proposal => proposal !== null); // Remove proposals without details
 
         return {
             ...dao,

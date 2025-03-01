@@ -177,7 +177,6 @@ export async function analyzeProposalsForProfile(profile, persona) {
                 predictedVote: prediction.vote,
                 predictedVoteReason: prediction.reason
             });
-            console.log(daoResults.proposals);
         }
 
         results.push(daoResults);
