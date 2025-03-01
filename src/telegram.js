@@ -112,9 +112,9 @@ async function displayResults(chatId, answers) {
 
         await bot.sendMessage(chatId,
             "🌱 DAOs need more Regenerates like you! \n\n" +
-            "Next, let's look at your DAOs. I can create a summary and provide helpful insights to make voting easier. Use:\n" +
-            "• /analyze <wallet_address>, or\n" +
-            "• Simply paste your wallet address or ENS name"
+            "I can make voting easier by summarizing proposals, and predicting 🤔 how your persona might vote. Try it out:\n" +
+            "• Paste a wallet address or ENS name\n" +
+            "• /analyze <wallet_address>\n"
         );
 
     } catch (error) {
