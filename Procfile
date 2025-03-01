@@ -1,1 +1,1 @@
-web: node src/telegram.js
+worker: node src/telegram.js
