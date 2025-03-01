@@ -17,6 +17,8 @@ const userSessions = new Map();
  * @typedef {Object} UserSession
  * @property {number} currentPair - Current pair index (0-3)
  * @property {Array<string>} answers - Collection of user answers
+ * @property {string} persona - Stored persona result
+ * @property {boolean} surveyComplete - Whether survey is complete
  */
 
 /**
@@ -26,7 +28,9 @@ const userSessions = new Map();
 function initializeSession(userId) {
     userSessions.set(userId, {
         currentPair: 0,
-        answers: []
+        answers: [],
+        persona: null,
+        surveyComplete: false
     });
 }
 
@@ -46,11 +50,8 @@ async function showSurveyPair(chatId, pairIndex) {
             ]
         ]
     };
-    console.log(pair.imageUrl)
-
     // Send single image with choice buttons
     await bot.sendPhoto(chatId, pair.imageUrl, {
-        // caption: `Round ${pairIndex + 1}/4\nWho resonates with you more?`,
         reply_markup: keyboard
     });
 }
@@ -93,25 +94,69 @@ async function handleSurveyResponse(userId, chatId, choice) {
  */
 async function displayResults(chatId, answers) {
     try {
-        // Show loading message
         await bot.sendMessage(chatId, "🔮 Analyzing your choices...");
 
-        // Get personalized results
         const summary = await getSurveyResults(answers);
 
-        // Send results with some formatting
+        // Store persona in session for later use
+        const userId = chatId;
+        const session = userSessions.get(userId);
+        session.persona = summary;
+        session.surveyComplete = true;
+
+        // Send persona results
         await bot.sendMessage(chatId,
             "🎭 Your Web3 Persona Analysis:\n\n" +
-            summary + "\n\n" +
-            "Want to try again? Just type /start!"
+            summary + "\n\n"
         );
+
+        await bot.sendMessage(chatId,
+            "🌱 DAOs need more Regenerates like you! \n\n" +
+            "Next, let's look at your DAOs. I can create a summary and provide helpful insights to make voting easier. Use:\n" +
+            "• /analyze <wallet_address>, or\n" +
+            "• Simply paste your wallet address or ENS name"
+        );
+
     } catch (error) {
         console.error('Error displaying results:', error);
         await bot.sendMessage(chatId,
             "Sorry, there was an error generating your results. " +
             "Please try again with /start"
         );
+        userSessions.delete(chatId);
     }
+}
+
+/**
+ * Validates and processes wallet address or ENS name
+ * @param {string} input - Wallet address or ENS name
+ * @returns {boolean} - Whether the input is valid
+ */
+async function validateWalletInput(input) {
+    // Remove whitespace
+    const address = input.trim();
+
+    // Check if it's an ENS name (.eth)
+    if (address.toLowerCase().endsWith('.eth')) {
+        // Basic ENS validation: letters, numbers, hyphens, minimum 3 chars before .eth
+        const ensName = address.slice(0, -4); // remove .eth
+        const validENSRegex = /^[a-zA-Z0-9-]{3,}$/;
+        return validENSRegex.test(ensName);
+    }
+
+    // Check if it's an Ethereum address
+    const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+    return ethAddressRegex.test(address);
+}
+
+/**
+ * Analyzes DAO proposals based on user's persona
+ * @param {string} wallet - Wallet address
+ * @param {string} persona - User's persona summary
+ */
+async function analyzeDaoProposals(wallet, persona) {
+    // TODO: Implement DAO proposal analysis
+    return "Analyzing your DAO interactions...";
 }
 
 // Command handler for starting the survey
@@ -146,4 +191,75 @@ bot.on('callback_query', (query) => {
 
     // Handle the response (we'll implement this next)
     handleSurveyResponse(userId, chatId, choice);
+});
+
+/**
+ * Processes a wallet address and returns DAO analysis
+ * @param {number} chatId - Telegram chat ID
+ * @param {number} userId - User ID
+ * @param {string} walletAddress - Wallet or ENS to analyze
+ */
+async function processWalletAnalysis(chatId, userId, walletAddress) {
+    const session = userSessions.get(userId);
+    if (!session?.surveyComplete) {
+        await bot.sendMessage(chatId,
+            "⚠️ Please complete the persona survey first using /start"
+        );
+        return;
+    }
+
+    try {
+        if (await validateWalletInput(walletAddress)) {
+            await bot.sendMessage(chatId, "🔍 Processing your wallet...");
+
+            const analysis = await analyzeDaoProposals(walletAddress, session.persona);
+
+            await bot.sendMessage(chatId,
+                "Based on your Web3 persona and DAO interactions:\n\n" +
+                analysis + "\n\n" +
+                "Want to analyze another wallet? Use /analyze <wallet_address>"
+            );
+        } else {
+            await bot.sendMessage(chatId,
+                "⚠️ Please enter a valid Ethereum address or ENS name."
+            );
+        }
+    } catch (error) {
+        console.error('Error processing wallet:', error);
+        await bot.sendMessage(chatId,
+            "Sorry, there was an error processing your wallet. " +
+            "Please try again or start over with /start"
+        );
+    }
+}
+
+// Add analyze command handler
+bot.onText(/\/analyze(?:@\w+)?(?: (.+))?/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const walletAddress = match[1]?.trim();
+
+    if (!walletAddress) {
+        await bot.sendMessage(chatId,
+            "Please provide a wallet address or ENS name.\n" +
+            "Usage: /analyze <wallet_address>"
+        );
+        return;
+    }
+
+    await processWalletAnalysis(chatId, userId, walletAddress);
+});
+
+// Update the message handler to use the new processWalletAnalysis function
+bot.on('message', async (msg) => {
+    const userId = msg.from.id;
+    const chatId = msg.chat.id;
+    const session = userSessions.get(userId);
+
+    // Only process text messages when waiting for wallet address
+    if (!msg.text || !session || !session.surveyComplete || msg.text.startsWith('/')) {
+        return;
+    }
+
+    await processWalletAnalysis(chatId, userId, msg.text.trim());
 });
