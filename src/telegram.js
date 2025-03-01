@@ -119,8 +119,8 @@ async function displayResults(chatId, answers, userId) {
         );
 
         await bot.sendMessage(chatId,
-            "🌱 DAOs need more Regenerates like you! " +
-            "I can help stay active in your DAOs by providing proposal summaries and predicting how you vote. Try it out:\n" +
+            "🌱 DAOs need Regenerates like you to participate more!\n\n" +
+            "Let's make voting simple and fun. I can generate a DAO digest for you, which includes a prediction of how you would vote:\n" +
             "• /digest <wallet_address>\n"
         );
 

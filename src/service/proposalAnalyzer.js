@@ -119,8 +119,8 @@ Please provide a clear and concise answer based on the proposal details above.
 
 async function predictVote(proposal, persona) {
     const prompt = `You are a seasoned web3 DAO contributor. ${persona}.
-    Please Analyze this proposal and predict how you would vote. Be diligent to ensure your vote aligns with your persona and values.
-Your response should be in the following format as shown in the example response below. Do not discuss the request or add any additional information, other than the requested vote and reason.:
+    Please Analyze this proposal and predict how you would vote. Be diligent to ensure your vote aligns with your persona and values. Be critical in your reasoning. Its easy to just accept all proposals, but we need to ensure is aligns with our values.
+Your response should be in the following format as shown in the example response below. Do not discuss the request or add any additional information, other than the requested vote and reason.
 
 <example response>
 VOTE: either "FOR" or "AGAINST"
