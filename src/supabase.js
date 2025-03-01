@@ -75,15 +75,33 @@ export async function updateSession(sessionId, updates) {
 }
 
 export async function getActiveSession(telegramId) {
-    const { data, error } = await supabase
-        .from('telegram_sessions')
-        .select()
-        .eq('user_id', telegramId)
-        .eq('is_complete', false)
-        .single();
+    try {
+        // First try to get the most recent incomplete session
+        const { data: activeSession, error: activeError } = await supabase
+            .from('telegram_sessions')
+            .select()
+            .eq('user_id', telegramId)
+            .eq('is_complete', false)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
-    return data;
+        // If no active session found, check if we have any session at all
+        if (activeError && activeError.code === 'PGRST116') {
+            console.log(`No active session found for user ${telegramId}`);
+            return null;
+        }
+
+        if (activeError) {
+            console.error('Error fetching session:', activeError);
+            throw activeError;
+        }
+
+        return activeSession;
+    } catch (error) {
+        console.error('Error in getActiveSession:', error);
+        throw error;
+    }
 }
 
 export async function updateUserPersona(telegramId, persona, walletAddress = null) {

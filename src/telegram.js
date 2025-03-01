@@ -11,6 +11,7 @@ import {
     getActiveSession,
     updateUserPersona
 } from './supabase.js';
+import { resolveENS } from './ens.js';
 
 // Bot configuration
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -162,24 +163,29 @@ async function analyzeDaoProposals(wallet, persona) {
 }
 
 // Command handler for starting the survey
-bot.onText(/\/start/, (msg) => {
+bot.onText(/\/start/, async (msg) => {
     const userId = msg.from.id;
     const chatId = msg.chat.id;
     const username = msg.from.username || null;
 
-    // Initialize new session with username
-    initializeSession(userId, username).then(() => {
+    try {
+        // Initialize new session with username
+        await initializeSession(userId, username);
+
         // Welcome message
-        bot.sendMessage(chatId,
+        await bot.sendMessage(chatId,
             "Hi" + (username ? ` @${username}` : "") + ", I'm your DAO Delegate Assistant! 🌟\n\n" +
             "You'll be presented with 4 pairs of crypto personalities. For each pair, choose the one that resonates most with your values.\n" +
             "At the end, you'll receive your personalized Web3 persona!\n\n" +
             "Let's begin! 🚀"
-        ).then(() => {
-            // Show first pair after welcome message
-            showSurveyPair(chatId, 0);
-        });
-    });
+        );
+
+        // Show first pair after welcome message
+        await showSurveyPair(chatId, 0);
+    } catch (error) {
+        console.error('Error starting session:', error);
+        await bot.sendMessage(chatId, "Error starting survey. Please try again with /start");
+    }
 });
 
 // Handle callback queries (button clicks)
@@ -210,11 +216,14 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
             );
             return;
         }
-
+        let walletAddress
         if (await validateWalletInput(walletAddressInput)) {
             if (walletAddressInput.toLowerCase().endsWith('.eth')) {
                 // Resolve ENS name to address
                 walletAddress = await resolveENS(walletAddressInput);
+            }
+            if (!walletAddress) {
+                throw new Error(`Could not resolve wallet address for: ${walletAddressInput}`);
             }
             await bot.sendMessage(chatId, "🔍 Processing your wallet...");
 
