@@ -1,6 +1,15 @@
-import { chat } from './service/ollama/ollama.js';
+import { config } from 'dotenv';
+config();
 
-const MODEL = process.env.OLLAMA_MODEL || 'mistral'
+// Import chat function from either Ollama or OpenAI based on environment
+const AI_SERVICE = process.env.AI_SERVICE || 'ollama';
+const { chat } = AI_SERVICE === 'openai'
+    ? await import('./service/openai/openai.js')
+    : await import('./service/ollama/ollama.js');
+
+const MODEL = AI_SERVICE === 'openai'
+    ? (process.env.OPENAI_MODEL || 'gpt-3.5-turbo')
+    : (process.env.OLLAMA_MODEL || 'mistral');
 
 export const pairs = [
     {
