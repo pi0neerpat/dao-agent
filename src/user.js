@@ -17,9 +17,7 @@ export const getUserProfile = async (delegateAddress, proposalResultsLimit) => {
     const delegateData = await firecrawl.scrapeDelegate(delegateAddress);
     const daoMemberships = parseDelegateMemberships(delegateData);
     // console.log('📊 DAO memberships:', daoMemberships);
-    // const proposalList = await firecrawl.scrapeAllDAOProposals(daoMemberships);
-    // TODO: Remove debug limit daos
-    const proposalList = await firecrawl.scrapeAllDAOProposals(daoMemberships.slice(0, 1));
+    const proposalList = await firecrawl.scrapeAllDAOProposals(daoMemberships);
     // console.log('📊 DAO proposals:', proposalList);
 
     console.log('📝 Fetching proposal details...');
@@ -41,15 +39,15 @@ export const getUserProfile = async (delegateAddress, proposalResultsLimit) => {
     console.log('🔄 Creating unified delegate profile...');
     const profile = createUnifiedDelegateProfile(delegateData, proposalList, proposalDetails);
 
-    // Save profile as before
-    const profileTimestamp = getFormattedTimestamp();
-    const profileDir = join(process.cwd(), 'profiles');
-    const profileFilename = `profile-${profileTimestamp}.json`;
-    const profilePath = join(profileDir, profileFilename);
+    // // Save profile as before
+    // const profileTimestamp = getFormattedTimestamp();
+    // const profileDir = join(process.cwd(), 'profiles');
+    // const profileFilename = `profile-${profileTimestamp}.json`;
+    // const profilePath = join(profileDir, profileFilename);
 
-    mkdirSync(profileDir, { recursive: true });
-    writeFileSync(profilePath, JSON.stringify(profile, null, 2));
-    console.log(`📝 Profile saved to: ${profilePath}`);
+    // mkdirSync(profileDir, { recursive: true });
+    // writeFileSync(profilePath, JSON.stringify(profile, null, 2));
+    // console.log(`📝 Profile saved to: ${profilePath}`);
 
     return profile;
 }

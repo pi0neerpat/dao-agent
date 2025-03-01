@@ -19,7 +19,7 @@ import { analyzeProposalsForProfile } from './service/proposalAnalyzer.js';
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(TOKEN, { polling: true });
 
-const DAO_RESULTS_LIMIT = process.env.DAO_RESULTS_LIMIT || 3
+const PROPOSAL_RESULTS_LIMIT = process.env.PROPOSAL_RESULTS_LIMIT || 3
 // Remove userSessions Map as we're using Supabase now
 
 /**
@@ -161,7 +161,7 @@ async function validateWalletInput(input) {
  * @param {string} persona - User's persona summary
  */
 async function analyzeDaoProposals(wallet, persona) {
-    const profile = await getUserProfile(wallet, DAO_RESULTS_LIMIT);
+    const profile = await getUserProfile(wallet, PROPOSAL_RESULTS_LIMIT);
     const analysisResults = await analyzeProposalsForProfile(profile, persona);
     return analysisResults
 }
@@ -213,8 +213,25 @@ bot.on('callback_query', (query) => {
 async function sendAnalysisResults(chatId, analysis) {
     await bot.sendMessage(chatId, '*🗞️ YOUR DAO DIGEST*', { parse_mode: 'Markdown' });
 
-    for (const dao of analysis) {
-        // Send DAO image with smaller dimensions
+    // First, separate DAOs with and without proposals
+    const activeDaos = analysis.filter(dao => dao.proposals.length > 0);
+    const inactiveDaos = analysis.filter(dao => dao.proposals.length === 0);
+
+    // List inactive DAOs first if any exist
+    if (inactiveDaos.length > 0) {
+        let inactiveMessage = '*Other DAOs (no active proposals):*\n';
+        inactiveDaos.forEach(dao => {
+            inactiveMessage += `• [${dao.name}](https://www.tally.xyz/gov/${dao.slug})\n`;
+        });
+        await bot.sendMessage(chatId, inactiveMessage, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        });
+        await bot.sendMessage(chatId, '━━━━━━━━━━━━━━━');
+    }
+
+    // Process DAOs with active proposals
+    for (const dao of activeDaos) {
         if (dao.imageUrl) {
             await bot.sendPhoto(chatId, dao.imageUrl, {
                 caption: `*${dao.name}*`,
@@ -228,20 +245,20 @@ async function sendAnalysisResults(chatId, analysis) {
         statsMessage += `💪 Voting Power: ${dao.percentOfDelegated}\n`;
         await bot.sendMessage(chatId, statsMessage, { parse_mode: 'Markdown' });
 
-        if (dao.proposals.length === 0) {
-            await bot.sendMessage(chatId, '📭 No active proposals\n');
-            continue;
-        }
-
-        // Format proposals with numbers and enhanced formatting
         for (let i = 0; i < dao.proposals.length; i++) {
             const proposal = dao.proposals[i];
-            const voteEmoji = proposal.predictedVote === 'FOR' ? '👍' : '👎';
-
             let proposalMessage = `*📜 #${i + 1}* `;
             proposalMessage += `*${proposal.name}*\n\n`;
             proposalMessage += `${proposal.summary}\n\n`;
-            proposalMessage += `*Your Predicted Vote:* ${voteEmoji} ${proposal.predictedVoteReason}\n\n`;
+
+            // Only show prediction if there's a reason
+            if (proposal.predictedVoteReason && proposal.predictedVoteReason !== 'No reason provided') {
+                const voteEmoji = proposal.predictedVote === 'FOR' ? '👍' : '👎';
+                proposalMessage += `*Your Predicted Vote:* ${voteEmoji} ${proposal.predictedVoteReason}\n\n`;
+            } else {
+                proposalMessage += `*Prediction:* ❓ No prediction available\n\n`;
+            }
+
             proposalMessage += `[🗳️ Go Vote Now!](${proposal.url})\n`;
 
             await bot.sendMessage(chatId, proposalMessage, {
@@ -250,7 +267,6 @@ async function sendAnalysisResults(chatId, analysis) {
             });
         }
 
-        // Add separator between DAOs
         await bot.sendMessage(chatId, '━━━━━━━━━━━━━━━');
     }
 }
