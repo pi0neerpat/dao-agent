@@ -161,6 +161,7 @@ export async function analyzeProposalsForProfile(profile, persona) {
     for (const dao of profile.daos) {
         const daoResults = {
             name: dao.name,
+            slug: dao.slug,  // Add the slug
             votes: dao.votes || 0,
             percentOfDelegated: dao.percentOfDelegated || 0,
             imageUrl: dao.imageUrl || '',

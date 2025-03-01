@@ -221,7 +221,9 @@ async function sendAnalysisResults(chatId, analysis) {
     if (inactiveDaos.length > 0) {
         let inactiveMessage = '*Other DAOs (no active proposals):*\n';
         inactiveDaos.forEach(dao => {
-            inactiveMessage += `• [${dao.name}](https://www.tally.xyz/gov/${dao.slug})\n`;
+            // Use dao.slug to construct the URL
+            const daoUrl = `https://www.tally.xyz/gov/${dao.slug}`;
+            inactiveMessage += `• [${dao.name}](${daoUrl})\n`;
         });
         await bot.sendMessage(chatId, inactiveMessage, {
             parse_mode: 'Markdown',
