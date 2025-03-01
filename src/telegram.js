@@ -210,17 +210,21 @@ bot.on('callback_query', (query) => {
  * @param {Array<Object>} analysis - Analysis results
  * @returns {string} - Formatted message
  */
-async function formatAnalysisResults(analysis) {
-    let message = '📊 *Your DAO Digest*\n\n';
+async function sendAnalysisResults(chatId, analysis) {
+    let message = '📊 *DAO Digest*\n\n';
+    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
 
     for (const dao of analysis) {
-        // Format DAO header with stats
-        message += `*${dao.name}*\n`;
+        if (dao.imageUrl) {
+            await bot.sendPhoto(chatId, dao.imageUrl, { width: 100, height: 100 });
+        }
+        let message = `*${dao.name}*\n`;
         message += `🗳 Your Votes: ${dao.votes}\n`;
         message += `💪 Your Voting Power: ${dao.percentOfDelegated}\n`;
 
         if (dao.proposals.length === 0) {
             message += '❌ No active proposals\n\n';
+            await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
             continue;
         }
 
@@ -233,6 +237,8 @@ async function formatAnalysisResults(analysis) {
             message += `💭 *Reason:* ${proposal.predictedVoteReason}\n`;
         }
         message += '\n-------------------\n\n';
+
+        await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
     }
 
     return message;
@@ -269,9 +275,9 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
             await updateUserPersona(userId, user.persona, walletAddress);
 
             const analysis = await analyzeDaoProposals(walletAddress, user.persona);
-            const formattedMessage = await formatAnalysisResults(analysis);
 
-            await bot.sendMessage(chatId, formattedMessage, { parse_mode: 'Markdown' });
+            await sendAnalysisResults(chatId, analysis);
+
             await bot.sendMessage(chatId,
                 "Want to analyze another wallet? Use /digest <wallet_address>"
             );
