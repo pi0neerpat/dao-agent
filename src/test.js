@@ -7,7 +7,7 @@ import { getSurveyResults } from './survey.js';
 
 // Import either Ollama or OpenAI based on environment
 const AI_SERVICE = process.env.AI_SERVICE || 'ollama';
-const { serve } = AI_SERVICE === 'openai' 
+const { serve } = AI_SERVICE === 'openai'
     ? await import('./service/openai/openai.js')
     : await import('./service/ollama/ollama.js');
 

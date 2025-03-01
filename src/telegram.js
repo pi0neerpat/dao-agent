@@ -211,37 +211,48 @@ bot.on('callback_query', (query) => {
  * @returns {string} - Formatted message
  */
 async function sendAnalysisResults(chatId, analysis) {
-    let message = '📊 *DAO Digest*\n\n';
-    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, '*🗞️ YOUR DAO DIGEST*', { parse_mode: 'Markdown' });
 
     for (const dao of analysis) {
+        // Send DAO image with smaller dimensions
         if (dao.imageUrl) {
-            await bot.sendPhoto(chatId, dao.imageUrl, { width: 100, height: 100 });
+            await bot.sendPhoto(chatId, dao.imageUrl, {
+                caption: `*${dao.name}*`,
+                parse_mode: 'Markdown',
+                width: 30,
+                height: 30
+            });
         }
-        let message = `*${dao.name}*\n`;
-        message += `🗳 Your Votes: ${dao.votes}\n`;
-        message += `💪 Your Voting Power: ${dao.percentOfDelegated}\n`;
+
+        let statsMessage = `🗳 Votes: ${dao.votes}\n`;
+        statsMessage += `💪 Voting Power: ${dao.percentOfDelegated}\n`;
+        await bot.sendMessage(chatId, statsMessage, { parse_mode: 'Markdown' });
 
         if (dao.proposals.length === 0) {
-            message += '❌ No active proposals\n\n';
-            await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+            await bot.sendMessage(chatId, '📭 No active proposals\n');
             continue;
         }
 
-        // Format each proposal
-        message += '\n📜 *Active Proposals:*\n';
-        for (const proposal of dao.proposals) {
-            message += `\n*${proposal.name}*\n`;
-            message += `📝 *Summary:* ${proposal.summary}\n`;
-            message += `🗳 *Predicted Vote:* ${proposal.predictedVote}\n`;
-            message += `💭 *Reason:* ${proposal.predictedVoteReason}\n`;
+        // Format proposals with numbers and enhanced formatting
+        for (let i = 0; i < dao.proposals.length; i++) {
+            const proposal = dao.proposals[i];
+            const voteEmoji = proposal.predictedVote === 'FOR' ? '👍' : '👎';
+
+            let proposalMessage = `*📜 #${i + 1}* `;
+            proposalMessage += `*${proposal.name}*\n\n`;
+            proposalMessage += `${proposal.summary}\n\n`;
+            proposalMessage += `*Your Predicted Vote:* ${voteEmoji} ${proposal.predictedVoteReason}\n\n`;
+            proposalMessage += `[🗳️ Go Vote Now!](${proposal.url})\n`;
+
+            await bot.sendMessage(chatId, proposalMessage, {
+                parse_mode: 'Markdown',
+                disable_web_page_preview: true
+            });
         }
-        message += '\n-------------------\n\n';
 
-        await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        // Add separator between DAOs
+        await bot.sendMessage(chatId, '━━━━━━━━━━━━━━━');
     }
-
-    return message;
 }
 
 /**

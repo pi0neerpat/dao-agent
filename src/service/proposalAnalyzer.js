@@ -175,7 +175,8 @@ export async function analyzeProposalsForProfile(profile, persona) {
                 name: proposal.title,
                 summary,
                 predictedVote: prediction.vote,
-                predictedVoteReason: prediction.reason
+                predictedVoteReason: prediction.reason,
+                url: proposal.url
             });
         }
 
