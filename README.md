@@ -1,3 +1,18 @@
+Our ETH Denver 2025 project is an AI assistant to make DAO voting easier and fun. You'll receive a personalized digest for your DAOs, and a voting prediction using your web3 "persona".
+
+https://t.me/dao_digest_bot
+
+It only takes 1 minute and we'd love some feedback!
+
+## Screenshots
+
+<img src="https://github.com/pi0neerpat/dao-agent/blob/main/images/screenshot1.png" width="300" alt="Delegate persona">
+<img src="https://github.com/pi0neerpat/dao-agent/blob/main/images/screenshot2.png" width="300" alt="List of active proposals">
+
+## Demo
+
+Check out our live demo at https://t.me/dao_digest_bot
+
 Scrape data from Tally.xyz for a specific DAO.
 Use AI to summarize several aspects for the proposal
 

@@ -308,7 +308,7 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
             await sendAnalysisResults(chatId, analysis);
 
             await bot.sendMessage(chatId,
-                "Want to analyze another wallet? Use /digest <address or ENS>"
+                "Want to analyze another wallet? Use /digest <address or ENS>\n\nHelp improve this tool. Send us feedback here: https://t.me/+rb5juX0JBZ8wMWE5"
             );
         } else {
             await bot.sendMessage(chatId,
