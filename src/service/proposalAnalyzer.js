@@ -46,7 +46,7 @@ ${proposal.comments.join('\n')}`
 export async function summarizeProposal(proposal) {
     console.log(`Using model: ${MODEL}`);
     const prompt = `
-Analyze this DAO proposal and provide a concise summary. Pay special attention to:
+You are a web3 DAO expert, and you use industry standard language to convey complex topics in a simple and concise manner. Analyze this web3 protocol DAO proposal and provide a concise summary. Pay special attention to:
 1. The main objective
 2. Financial implications (if any)
 3. Voting status and timeline
@@ -110,8 +110,63 @@ Please provide a clear and concise answer based on the proposal details above.
     }
 }
 
-export async function analyzeProposalsForProfile(profile) {
-    
+async function predictVote(proposal, persona) {
+    const prompt = `You are a web3 expert with experience participating in may DAOs and web3 protocols. You have a specific persona, which informs all your decisions. Analyze this proposal and predict how you would vote based on your persona. 
+Your response should be in the following format with two fields:
+
+<example response>
+VOTE: either "FOR" or "AGAINST"
+REASON: a brief explanation of your decision (max 2 sentences)
+</example response> 
+
+Your persona: ${persona}
+
+Proposal:
+${formattedProposalDetails(proposal)}
+`;
+
+    let response = '';
+    try {
+        await chat(MODEL, prompt, (json) => {
+            if (json.message?.content) {
+                response += json.message.content;
+            }
+        });
+        
+    } catch (err) {
+        console.error('Failed to predict vote:', err);
+        return { vote: 'UNKNOWN', reason: 'Failed to analyze proposal' };
+    }
+}
+
+export async function analyzeProposalsForProfile(profile, persona) {
+    const results = [];
+
+    for (const dao of profile.daos) {
+        const daoResults = {
+            name: dao.name,
+            votes: dao.votes || 0,
+            percentOfDelegated: dao.percentOfDelegated || 0,
+            imageUrl: dao.imageUrl || '',
+            proposals: []
+        };
+
+        for (const proposal of dao.proposals) {
+            const summary = await summarizeProposal(proposal);
+            const prediction = await predictVote(proposal, profile.persona);
+
+            daoResults.proposals.push({
+                name: proposal.title,
+                summary,
+                predictedVote: prediction.vote,
+                predictedVoteReason: prediction.reason
+            });
+        }
+
+        results.push(daoResults);
+    }
+
+    return results;
 }
 
 export async function saveAnalysisToFile(analysisResults) {

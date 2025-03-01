@@ -9,9 +9,7 @@ import {
 import { askAboutProposal, saveAnalysisToFile, summarizeProposal } from './service/proposalAnalyzer.js';
 import { getFormattedTimestamp } from './utils.js';
 
-const PROPOSAL_LIMIT = 3
-
-export const getUserProfile = async (delegateAddress, daoResultsLimit) => {
+export const getUserProfile = async (delegateAddress, proposalResultsLimit) => {
     const firecrawl = new FirecrawlService(process.env.FIRECRAWL_API_KEY);
 
     // Get delegate data and proposals
@@ -19,7 +17,7 @@ export const getUserProfile = async (delegateAddress, daoResultsLimit) => {
     const delegateData = await firecrawl.scrapeDelegate(delegateAddress);
     const daoMemberships = parseDelegateMemberships(delegateData);
     // console.log('📊 DAO memberships:', daoMemberships);
-    const proposalList = await firecrawl.scrapeAllDAOProposals(daoMemberships.slice(0, daoResultsLimit));
+    const proposalList = await firecrawl.scrapeAllDAOProposals(daoMemberships);
     // console.log('📊 DAO proposals:', proposalList);
 
     console.log('📝 Fetching proposal details...');
@@ -27,7 +25,7 @@ export const getUserProfile = async (delegateAddress, daoResultsLimit) => {
     for (const result of proposalList) {
         if (!result.error && result.data) {
             const allProposals = parseActiveProposals(result.data);
-            const limitedProposals = allProposals.slice(0, PROPOSAL_LIMIT);
+            const limitedProposals = allProposals.slice(0, proposalResultsLimit);
             const details = await firecrawl.scrapeAllProposalDetails(limitedProposals, result.dao.slug);
             details.forEach(detail => {
                 if (detail.details) {

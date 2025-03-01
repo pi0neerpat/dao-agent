@@ -12,6 +12,8 @@ import {
     updateUserPersona
 } from './supabase.js';
 import { resolveENS } from './ens.js';
+import { getUserProfile } from './user.js';
+import { analyzeProposalsForProfile } from './service/proposalAnalyzer.js';
 
 // Bot configuration
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -158,8 +160,9 @@ async function validateWalletInput(input) {
  * @param {string} persona - User's persona summary
  */
 async function analyzeDaoProposals(wallet, persona) {
-    // TODO: Implement DAO proposal analysis
-    return "Analyzing your DAO interactions...";
+    const profile = await getUserProfile(wallet, DAO_RESULTS_LIMIT);
+    const analysisResults = await analyzeProposalsForProfile(profile, persona);
+    return analysisResults
 }
 
 // Command handler for starting the survey
@@ -218,6 +221,7 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
         }
         let walletAddress
         if (await validateWalletInput(walletAddressInput)) {
+            await bot.sendMessage(chatId, "🔍 Looking up your DAOs...");
             if (walletAddressInput.toLowerCase().endsWith('.eth')) {
                 // Resolve ENS name to address
                 walletAddress = await resolveENS(walletAddressInput);
@@ -225,7 +229,6 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
             if (!walletAddress) {
                 throw new Error(`Could not resolve wallet address for: ${walletAddressInput}`);
             }
-            await bot.sendMessage(chatId, "🔍 Processing your wallet...");
 
             // Store wallet address
             await updateUserPersona(userId, user.persona, walletAddress);
@@ -233,7 +236,7 @@ async function processWalletAnalysis(chatId, userId, walletAddressInput) {
             const analysis = await analyzeDaoProposals(walletAddress, user.persona);
 
             await bot.sendMessage(chatId,
-                "Based on your Web3 persona and DAO interactions:\n\n" +
+                "Here are the current active proposals from your DAOs:\n\n" +
                 analysis + "\n\n" +
                 "Want to analyze another wallet? Use /digest <wallet_address>"
             );

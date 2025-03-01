@@ -8,7 +8,7 @@ import { serve } from './service/ollama/ollama.js';
 const DELEGATE_ADDRESS = '0x1111fd96fD579642c0D589cd477188e29b47b738';
 
 // 0x9492510bbcb93b6992d8b7bb67888558e12dcac4
-const DAO_RESULTS_LIMIT = 3
+const PROPOSAL_RESULTS_LIMIT = 1
 const MOCK_PERSONA = "You are the architect of a transparent, sustainable, and open financial system, where governance is decollected yet inclusive. In the future of blockchain and Web3, you'll be known as the 'Garden Guru of the Grid', nurturing public goods while resisting censorship, championing economic freedom, and turning decentralized governance into a global trend. Your bold vision may polarize, but it's sure to bloom in an ever-evolving digital jungle!"
 const DUMMY_ANSWERS = ['person1', 'person1', 'person1', 'person2'];
 
@@ -31,13 +31,10 @@ async function test() {
         const userAddress = DELEGATE_ADDRESS
 
         // Get user's profile, including active proposals
-        const profile = await getUserProfile(userAddress, DAO_RESULTS_LIMIT);
-
-        // Append the user's persona
-        profile.persona = persona;
+        const profile = await getUserProfile(userAddress, PROPOSAL_RESULTS_LIMIT);
 
         // Analyze active proposals with survey results
-        const analysisResults = await analyzeProposalsForProfile(profile);
+        const analysisResults = await analyzeProposalsForProfile(profile, persona);
         console.log('🧫 Analysis Results:', analysisResults);
 
     } catch (error) {
