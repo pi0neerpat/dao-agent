@@ -1,12 +1,19 @@
 import { config } from 'dotenv';
 config();
 
-import { chat } from './ollama/ollama.js';
+// Import chat function from either Ollama or OpenAI based on environment
+const AI_SERVICE = process.env.AI_SERVICE || 'ollama';
+const { chat } = AI_SERVICE === 'openai'
+    ? await import('./openai/openai.js')
+    : await import('./ollama/ollama.js');
+
 import { getFormattedTimestamp } from '../utils.js';
 import { join } from 'path';
 import { writeFileSync, mkdirSync } from 'fs';
 
-const MODEL = process.env.OLLAMA_MODEL || 'mistral'
+const MODEL = AI_SERVICE === 'openai'
+    ? (process.env.OPENAI_MODEL || 'gpt-3.5-turbo')
+    : (process.env.OLLAMA_MODEL || 'mistral');
 
 const formattedProposalDetails = (proposal) => {
     // Extract key sections from description if they exist
@@ -111,28 +118,37 @@ Please provide a clear and concise answer based on the proposal details above.
 }
 
 async function predictVote(proposal, persona) {
-    const prompt = `You are a web3 expert with experience participating in may DAOs and web3 protocols. You have a specific persona, which informs all your decisions. Analyze this proposal and predict how you would vote based on your persona. 
-Your response should be in the following format with two fields:
+    const prompt = `You are a seasoned web3 DAO contributor. ${persona}.
+    Please Analyze this proposal and predict how you would vote. Be diligent to ensure your vote aligns with your persona and values.
+Your response should be in the following format as shown in the example response below. Do not discuss the request or add any additional information, other than the requested vote and reason.:
 
 <example response>
 VOTE: either "FOR" or "AGAINST"
-REASON: a brief explanation of your decision (max 2 sentences)
+REASON: A single sentence explaining the most relevant reason why the proposal aligns or does not align with your values. 
 </example response> 
 
-Your persona: ${persona}
-
-Proposal:
+<proposal>
 ${formattedProposalDetails(proposal)}
+</proposal>
 `;
 
-    let response = '';
     try {
+        let response = '';
         await chat(MODEL, prompt, (json) => {
             if (json.message?.content) {
                 response += json.message.content;
             }
         });
-        
+
+        // Parse the response using regex
+        const voteMatch = response.match(/VOTE:\s*(FOR|AGAINST)/i);
+        const reasonMatch = response.match(/REASON:\s*([^\n]+)/i);
+
+        return {
+            vote: voteMatch ? voteMatch[1].toUpperCase() : 'UNKNOWN',
+            reason: reasonMatch ? reasonMatch[1].trim() : 'No reason provided'
+        };
+
     } catch (err) {
         console.error('Failed to predict vote:', err);
         return { vote: 'UNKNOWN', reason: 'Failed to analyze proposal' };
@@ -161,6 +177,7 @@ export async function analyzeProposalsForProfile(profile, persona) {
                 predictedVote: prediction.vote,
                 predictedVoteReason: prediction.reason
             });
+            console.log(daoResults.proposals);
         }
 
         results.push(daoResults);

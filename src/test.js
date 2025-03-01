@@ -4,7 +4,13 @@ config();
 import { getUserProfile } from './user.js';
 import { analyzeProposalsForProfile } from './service/proposalAnalyzer.js';
 import { getSurveyResults } from './survey.js';
-import { serve } from './service/ollama/ollama.js';
+
+// Import either Ollama or OpenAI based on environment
+const AI_SERVICE = process.env.AI_SERVICE || 'ollama';
+const { serve } = AI_SERVICE === 'openai' 
+    ? await import('./service/openai/openai.js')
+    : await import('./service/ollama/ollama.js');
+
 const DELEGATE_ADDRESS = '0x1111fd96fD579642c0D589cd477188e29b47b738';
 
 // 0x9492510bbcb93b6992d8b7bb67888558e12dcac4
